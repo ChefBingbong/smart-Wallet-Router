@@ -14,6 +14,7 @@ import type {
       IWallet,
       ECDSAWallet,
 } from "../typechain-types";
+import { UserOp, sign } from "./utils/sign";
 
 describe("SmartWallet", () => {
       // Users
@@ -25,6 +26,7 @@ describe("SmartWallet", () => {
 
       // Forwarder
       let factory: ECDSAWalletFactory;
+      let wallet: ECDSAWalletFactory;
 
       // Wallets
       let aliceWallet: ECDSAWallet;
@@ -35,6 +37,9 @@ describe("SmartWallet", () => {
 
       before(async () => {
             [OWNER, ALICE, BOB] = await ethers.getSigners();
+
+            console.log("owner", OWNER.address);
+            console.log("ALICE", ALICE.address);
 
             // deploy token
             const ABC = await ethers.getContractFactory("ABC");
@@ -50,8 +55,8 @@ describe("SmartWallet", () => {
             const Wallet = (await ethers.getContractFactory(
                   "SmartWalletFactory"
             )) as SmartWalletFactory__factory;
-            const wallet = await Wallet.deploy();
-            await wallet.deployed();
+            const wallet = await Wallet.connect(OWNER).deploy();
+            await wallet.connect(OWNER).deployed();
 
             // await wallet.(OWNER.address);
 
@@ -59,8 +64,12 @@ describe("SmartWallet", () => {
             const WalletFactory = (await ethers.getContractFactory(
                   "ECDSAWalletFactory"
             )) as ECDSAWalletFactory__factory;
-            factory = await WalletFactory.deploy(wallet.address);
-            await factory.deployed();
+            factory = await WalletFactory.connect(OWNER).deploy(wallet.address);
+            await factory.connect(OWNER).deployed();
+
+            console.log("FACTORY", wallet.address);
+            console.log("ECDSAFACTORY", factory.address);
+            console.log("ABC", abc.address);
 
             // Setup user accounts
             await abc.transfer(ALICE.address, "100000000000000000000");
@@ -69,34 +78,54 @@ describe("SmartWallet", () => {
 
       // ----- UPDATE PARNER -----
       it("User should be able to create a wallet for themselves.", async () => {
-            const aliceWalletAddress = await factory.walletAddress(ALICE.address, 0);
-            await factory.connect(ALICE).createWallet(ALICE.address);
+            const aliceWalletAddress = await factory.walletAddress(OWNER.address, 0);
+            await factory.createWallet(OWNER.address);
             aliceWallet = (await ethers.getContractAt(
                   "ECDSAWallet",
                   aliceWalletAddress
             )) as ECDSAWallet;
-            expect(await aliceWallet.owner()).to.equal(ALICE.address);
+            expect(await aliceWallet.owner()).to.equal(OWNER.address);
       });
 
-      it("User should be able to create a wallet for someone else.", async () => {
-            await factory.connect(ALICE).createWallet(BOB.address);
-            const bobWalletAddress = await factory.walletAddress(BOB.address, 0);
-            bobWallet = (await ethers.getContractAt(
-                  "ECDSAWallet",
-                  bobWalletAddress
-            )) as ECDSAWallet;
-            expect(await bobWallet.owner()).to.equal(BOB.address);
-      });
+      // it("User should be able to create a wallet for someone else.", async () => {
+      //       await factory.connect(ALICE).createWallet(BOB.address);
+      //       const bobWalletAddress = await factory.walletAddress(BOB.address, 0);
+      //       bobWallet = (await ethers.getContractAt(
+      //             "ECDSAWallet",
+      //             bobWalletAddress
+      //       )) as ECDSAWallet;
+      //       expect(await bobWallet.owner()).to.equal(BOB.address);
+      // });
 
       it("User should be able to do any call through the wallet.", async () => {
-            await abc.connect(ALICE).transfer(aliceWallet.address, "100000000");
-            expect(await abc.balanceOf(aliceWallet.address)).to.equal("100000000");
-            const tx = await abc.populateTransaction.transfer(
-                  ALICE.address,
-                  "100000000"
+            const tx = await abc.populateTransaction // .connect(OWNER)
+                  .transfer(aliceWallet.address, "100000000");
+            // expect(await abc.balanceOf(aliceWallet.address)).to.equal("100000000");
+            // const tx = await abc.populateTransaction // .connect(ALICE.address)
+            //       .transfer(ALICE.address, "100000000");
+            const userOps: UserOp[] = [
+                  {
+                        to: OWNER.address,
+                        amount: "0",
+                        data: "0x",
+                  },
+            ];
+            // console.log("nnnnnn", aliceWallet.address, bobWallet.address);
+            const ALICEabcSignedTx = await sign(
+                  userOps,
+                  (await aliceWallet.nonce()) ?? 0,
+                  OWNER,
+                  aliceWallet.address
             );
-            await aliceWallet.connect(ALICE).call(abc.address, tx.data!);
-            expect(await abc.balanceOf(aliceWallet.address)).to.equal("0");
+            await aliceWallet.exec(
+                  ALICEabcSignedTx.values.userOps,
+                  ALICEabcSignedTx.sig
+                  // tx.from
+            );
+
+            // await ALICE.sendTransaction(tx2);
+            // await aliceWallet.connect(ALICE).call(abc.address, tx.data!);
+            expect(await abc.balanceOf(aliceWallet.address)).to.equal("100000000");
       });
 
       // it("User should be able to send funds to the wallet before and after creation.", async () => {

@@ -9,6 +9,7 @@ import type {
       SmartWalletV2__factory,
       SmartWalletFactoryV2__factory,
 } from "../typechain-types";
+import { UserOp, sign } from "./utils/sign";
 
 describe("SmartWalletV2", () => {
       // Users
@@ -89,7 +90,21 @@ describe("SmartWalletV2", () => {
                   ALICE.address,
                   "100000000"
             );
-            await aliceWallet.connect(ALICE).call(abc.address, tx.data!);
+            const userOps: UserOp[] = [
+                  {
+                        to: abc.address,
+                        amount: "0",
+                        data: tx.data,
+                  },
+            ];
+            const ALICEabcSignedTx = await sign(userOps, tx, ALICE, factory.address);
+            const tx1 = await aliceWallet
+                  .connect(ALICE)
+                  .populateTransaction.multiCall(
+                        [abc.address],
+                        [ALICEabcSignedTx.values.userOps[0].data]
+                  );
+            await ALICE.sendTransaction(tx1);
             expect(await abc.balanceOf(aliceWallet.address)).to.equal("0");
       });
 

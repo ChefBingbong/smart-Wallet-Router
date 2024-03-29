@@ -34,6 +34,7 @@ contract SmartWalletV2 is UUPSUpgradeable, OwnableUpgradeable {
     }
 
     function multiCall(address[] calldata _contracts, bytes[] calldata _data) onlyOwner external {
+      
         for (uint32 i = 0; i < _contracts.length; i++) {
             _call(_contracts[i], 0, _data[i]);
         }

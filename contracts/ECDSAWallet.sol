@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import "./SmartWallet.sol" ;
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract ECDSAWallet is SmartWallet {
     using ECDSAUpgradeable for bytes32;
@@ -76,6 +77,7 @@ contract ECDSAWallet is SmartWallet {
                 _sigChainID)
             )
         ).recover(_sig);
+        console.log(state().owner, signer, _sigChainID);
         require(state().owner == signer, "ECDSAWallet: failed to verify signature");
     }
 }
