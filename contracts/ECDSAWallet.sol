@@ -27,6 +27,7 @@ contract ECDSAWallet is SmartWallet {
         keccak256("ECDSAExec(UserOp[] userOps,uint256 nonce,uint256 chainID,uint256 sigChainID)UserOp(address to,uint256 amount,bytes data)");
 
     function domainSeperator(uint256 _chainID) public view returns (bytes32) {
+        console.log('scccc', address(this));
         return keccak256(abi.encode(TYPE_HASH, HASHED_NAME, HASHED_VERSION, _chainID, address(this)));
     }
 
@@ -74,10 +75,10 @@ contract ECDSAWallet is SmartWallet {
                 hash(_userOps),
                 nonce(), 
                 block.chainid, 
-                _sigChainID)
+                _sigChainID) 
             )
         ).recover(_sig);
-        console.log(state().owner, signer, _sigChainID);
+        console.log(state().owner, signer,nonce());
         require(state().owner == signer, "ECDSAWallet: failed to verify signature");
     }
 }
