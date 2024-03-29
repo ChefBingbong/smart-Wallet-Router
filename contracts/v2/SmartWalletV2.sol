@@ -13,12 +13,12 @@ contract SmartWalletV2 is UUPSUpgradeable, OwnableUpgradeable {
         emit LogReceivedEther(_msgSender(), msg.value);
     }
 
-    function __SmartWallet_init(address _owner) public initializer {
+    function __SmartWalletV2_init(address _owner) public initializer {
         __Ownable_init_unchained();
-        __SmartWallet_init_unchained(_owner);
+        __SmartWalletV2_init_unchained(_owner);
     }
 
-    function __SmartWallet_init_unchained(address _owner) internal initializer {
+    function __SmartWalletV2_init_unchained(address _owner) internal initializer {
         transferOwnership(_owner);
         if (address(this).balance > 0) {
             emit LogReceivedEther(_msgSender(), address(this).balance);
@@ -48,7 +48,7 @@ contract SmartWalletV2 is UUPSUpgradeable, OwnableUpgradeable {
     function _call(address _contract, uint256 _value, bytes calldata _data) internal {
         (bool ok, bytes memory resp) = _contract.call{ value: _value }(_data);
         emit LogCall(_contract, _value, _data);
-        require(ok, string(abi.encodePacked("SmartWallet: contract call failed ( ", string(resp),")")));
+        require(ok, string(abi.encodePacked("SmartWalletV2: contract call failed ( ", string(resp),")")));
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
