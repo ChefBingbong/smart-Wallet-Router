@@ -17,33 +17,38 @@
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.2.0",
+    "@types/lodash": "^4.17.0",
     "@types/mocha": "^9.1.0",
     "@types/node": ">=12.0.0",
     "chai": "^4.2.0",
     "ethers": "^5.4.7",
-    "hardhat": "^2.11.2",
+    "hardhat": "^2.22.2",
     "hardhat-deploy": "^0.11.16",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.8.0",
     "ts-node": "^10.9.1",
     "typechain": "^8.1.0",
-    "typescript": "^4.8.4"
+    "typescript": "5.2.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0-rc.1",
     "@openzeppelin/contracts-upgradeable": "^4.8.0-rc.1",
+    "@pancakeswap/chains": "^0.4.1",
     "@types/axios": "^0.14.0",
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.14",
     "@types/morgan": "^1.9.3",
     "axios": "^1.0.0",
+    "chalk": "4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.1",
     "knex": "^2.3.0",
+    "lodash": "^4.17.21",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.20",
     "pg": "^8.8.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "viem": "^2.9.5"
   }
 }
