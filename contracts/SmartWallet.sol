@@ -32,6 +32,11 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
         }
     }
 
+    function call(address _contract, bytes calldata _data) external {
+        _call(_contract, 0, _data);
+    }
+
+
     function _call(address _contract, uint256 _value, bytes calldata _data) internal {
         (bool ok, bytes memory resp) = _contract.call{ value: _value }(_data);
         emit LogCall(_contract, _value, _data);
