@@ -1,5 +1,6 @@
 import type { ChainId } from "@pancakeswap/chains";
 import chalk from "chalk";
+import { formatUnits } from "ethers/lib/utils";
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -17,9 +18,8 @@ import type { Transaction } from "../test/utils/sign";
 import {
       ECDSAWalletFactory__factory,
       ECDSAWallet__factory,
+      ERC20__factory,
 } from "../typechain-types";
-import { slice } from "lodash";
-import { formatUnits } from "ethers/lib/utils";
 
 export type SmartWalletConfig = {
       chainId: ChainId | ExtendedChainId;
@@ -59,6 +59,11 @@ async function main(config: SmartWalletConfig) {
             1
       );
 
+      const ERC20Asset = ERC20__factory.connect(
+            "0x80a14816eCfC8454962dad80d882E8e8fFCb1819",
+            smartWalletSigner
+      );
+
       const userBalance = await provider.getBalance(userWalletSigner.address);
       const userSWBalance = await provider.getBalance(smartWalletSigner.address);
       const recipientBalance = await provider.getBalance(config.recipientAddress);
@@ -75,6 +80,7 @@ async function main(config: SmartWalletConfig) {
       if (userWalletContractCode === "0x") {
             isCreationTx = true;
             console.log(
+                  // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
                   chalk.yellow(`Wallet Not deployed yet. initiating creation Tx.`)
             );
             await sleep(2000);
@@ -108,6 +114,32 @@ async function main(config: SmartWalletConfig) {
             provider
       );
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
+      const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
+            "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D"
+      );
+
+      if (userWalletBalance.isZero()) {
+            console.log(
+                  chalk.yellow(
+                        `You currently have no ${await ERC20Asset.symbol()}in
+                         your sart wallet. transfering from you naytve wallet`
+                  )
+            );
+            const userToWalletTransferTx = await ERC20Asset.connect(
+                  userWalletSigner
+            ).transfer(userSmartWalletAddress, config.amount);
+
+            const transferTxReceipt = await userToWalletTransferTx.wait(1);
+            console.log(
+                  chalk.green(
+                        `transfer successful ${transferTxReceipt.transactionHash}\n`
+                  )
+            );
+      }
+
+      const populatedTransferTx = await ERC20Asset.connect(
+            smartWalletSigner
+      ).populateTransaction.transfer(config.recipientAddress, config.amount);
 
       const relayerTx: UserOp = {
             to: smartWalletSigner.address,
@@ -115,12 +147,13 @@ async function main(config: SmartWalletConfig) {
             data: "0x",
       };
       const transferTx: UserOp = {
-            to: config.recipientAddress,
-            amount: amountFormatted,
-            data: "0x",
+            to: ERC20Asset.address,
+            amount: "0",
+            data: populatedTransferTx.data,
       };
 
       const userOps = isCreationTx ? [relayerTx, transferTx] : [transferTx];
+
       const signature = await signTypedTx(
             userOps,
             userWalletSigner,
@@ -149,7 +182,7 @@ async function main(config: SmartWalletConfig) {
                   if (txCost.gt(transaction.userOps[0].amount)) {
                         console.log(
                               chalk.red(`
-                              Insufficient fee payment for Smart wallet, gas 
+                              Insufficient fee payment for Smart wallet, gas
                               cost is greater than fee`)
                         );
                         return;
@@ -190,7 +223,7 @@ const customConfig: SmartWalletConfig = {
       userWalletSigner:
             "225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a",
       recipientAddress: "0x356c5fA625F89481a76d9f7Af4eD866CD8c6CB4B",
-      amount: 10000000000,
+      amount: 100,
       relayerFee: 0,
 };
 

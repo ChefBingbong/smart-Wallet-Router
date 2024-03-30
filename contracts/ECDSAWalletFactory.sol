@@ -15,8 +15,8 @@ contract ECDSAWalletFactory {
         factory = _factory;
     }
 
-    function createWallet(address _owner) external returns (IWallet) {
-        return factory.createWallet(address(wallet), abi.encodeWithSelector(ECDSAWallet.__ECDSAWallet_init.selector, _owner));
+    function createWallet(address _owner) external  payable returns (IWallet) {
+        return factory.createWallet{value: msg.value}(address(wallet), abi.encodeWithSelector(ECDSAWallet.__ECDSAWallet_init.selector, _owner));
     }
 
     function walletAddress(address _owner, uint256 _nonce) external view returns (address) {

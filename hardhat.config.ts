@@ -106,6 +106,10 @@ const config: HardhatUserConfig = {
                   url: "https://rpc.api.moonriver.moonbeam.network/",
                   accounts: defaultAccounts,
             },
+            zkEvmTestnet: {
+                  url: "https://polygon-zkevm-testnet.rpc.thirdweb.com",
+                  accounts: defaultAccounts,
+            },
       },
 
       namedAccounts: {

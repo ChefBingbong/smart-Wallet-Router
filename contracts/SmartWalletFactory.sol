@@ -11,7 +11,8 @@ contract SmartWalletFactory is IWalletFactory {
 
     event WalletCreated(address indexed _wallet, bytes32 indexed _callID);
 
-    function createWallet(address _impl, bytes memory _call) external returns (IWallet) {
+    function createWallet(address _impl, bytes memory _call) external payable returns (IWallet) {
+        require(msg.value > 0, 'user needs to fund wallet on creaton');
         bytes32 callID = keccak256(_call);
 
         // salt is derived from call hash and nonce, this is to allow the same user to 
@@ -21,8 +22,12 @@ contract SmartWalletFactory is IWalletFactory {
         }(address(_impl), _call);
 
         emit WalletCreated(address(wallet_), callID);
+        IWallet wallet = IWallet(payable(wallet_));
 
-        return IWallet(payable(wallet_));
+        (bool ok, ) = address(wallet).call{value: msg.value}("");
+        require(ok, "SmartWallet: Failed to creation Fee");
+
+        return wallet;
     }
 
     function walletAddress(address _impl, bytes memory _call, uint256 _nonce) external view returns (address) {

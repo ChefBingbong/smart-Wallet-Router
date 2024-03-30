@@ -161,7 +161,7 @@ export interface SmartWallet {
 export interface UserOp {
       to: string;
       amount: BigNumberish;
-      data: ethers.utils.BytesLike;
+      data: ethers.utils.BytesLike | undefined;
 }
 
 interface Transaction {
