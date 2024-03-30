@@ -28,6 +28,7 @@ export type SmartWalletConfig = {
       recipientAddress: Address;
       amount: number | string;
       relayerFee: number | string;
+      tokenAddress: Address;
 };
 
 async function main(config: SmartWalletConfig) {
@@ -60,7 +61,7 @@ async function main(config: SmartWalletConfig) {
       );
 
       const ERC20Asset = ERC20__factory.connect(
-            "0x80a14816eCfC8454962dad80d882E8e8fFCb1819",
+            config.tokenAddress,
             smartWalletSigner
       );
 
@@ -115,7 +116,7 @@ async function main(config: SmartWalletConfig) {
       );
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
       const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
-            "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D"
+            userWalletSigner.address
       );
 
       if (userWalletBalance.isZero()) {
