@@ -16,7 +16,7 @@ import type {
 } from "../typechain-types";
 import { UserOp, sign } from "./utils/sign";
 
-describe.skip("SmartWallet", () => {
+describe("Call", () => {
       // Users
       let ALICE: SignerWithAddress;
       let BOB: SignerWithAddress;
@@ -38,9 +38,6 @@ describe.skip("SmartWallet", () => {
       before(async () => {
             [OWNER, ALICE, BOB] = await ethers.getSigners();
 
-            console.log("owner", OWNER.address);
-            console.log("ALICE", ALICE.address);
-
             // deploy token
             const ABC = await ethers.getContractFactory("ABC");
             abc = (await ABC.deploy()) as ABC;
@@ -55,21 +52,16 @@ describe.skip("SmartWallet", () => {
             const Wallet = (await ethers.getContractFactory(
                   "SmartWalletFactory"
             )) as SmartWalletFactory__factory;
+
             const wallet = await Wallet.connect(OWNER).deploy();
             await wallet.connect(OWNER).deployed();
 
-            // await wallet.(OWNER.address);
-
-            // deploy WalletFactory
             const WalletFactory = (await ethers.getContractFactory(
                   "ECDSAWalletFactory"
             )) as ECDSAWalletFactory__factory;
+
             factory = await WalletFactory.connect(OWNER).deploy(wallet.address);
             await factory.connect(OWNER).deployed();
-
-            console.log("FACTORY", wallet.address);
-            console.log("ECDSAFACTORY", factory.address);
-            console.log("ABC", abc.address);
 
             // Setup user accounts
             await abc.transfer(ALICE.address, "100000000000000000000");
@@ -79,7 +71,7 @@ describe.skip("SmartWallet", () => {
       // ----- UPDATE PARNER -----
       it("User should be able to create a wallet for themselves.", async () => {
             const aliceWalletAddress = await factory.walletAddress(OWNER.address, 0);
-            await factory.createWallet(OWNER.address);
+            await factory.createWallet(OWNER.address, { value: "100" });
             aliceWallet = (await ethers.getContractAt(
                   "ECDSAWallet",
                   aliceWalletAddress

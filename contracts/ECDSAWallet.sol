@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
 
-import "./SmartWallet.sol" ;
+import "./SmartWallet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "hardhat/console.sol";
 

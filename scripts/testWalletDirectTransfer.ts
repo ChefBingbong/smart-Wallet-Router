@@ -41,10 +41,12 @@ async function main() {
       // console.log(userSigner);
       const gasPrice = await wallet.provider.getGasPrice();
 
+      const nonce = await user.getTransactionCount();
+      console.log(nonce);
       const signedtx = await user.signTransaction({
             gasLimit: 2000000,
             chainId: 80001,
-            nonce: 6,
+            nonce,
             gasPrice,
             from: user.address,
             to: "0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa",

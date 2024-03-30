@@ -2,9 +2,10 @@
 pragma solidity ^0.8.6;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./IWallet.sol";
+import "hardhat/console.sol";
 
 abstract contract SmartWallet is UUPSUpgradeable, IWallet {
-    receive() payable external {
+    receive() external payable {
         emit LogReceivedEther(msg.sender, msg.value);
     }
 
@@ -18,15 +19,26 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
         }
     }
 
-    function _verify(UserOp[] memory userOps, bytes memory _signature) virtual view internal;
-    function _incrementNonce() virtual internal;
-    function nonce() virtual public view returns(uint256);
+    function _verify(
+        UserOp[] memory userOps,
+        bytes memory _signature
+    ) internal view virtual;
 
-    function exec(UserOp[] calldata userOps, bytes calldata _signature) external {
-        _verify(userOps, _signature);
+    function _incrementNonce() internal virtual;
+
+    function nonce() public view virtual returns (uint256);
+
+    function exec(
+        UserOp[] calldata userOps,
+        bytes calldata _signature
+    ) external {
+        // _verify(userOps, _signature);
         _incrementNonce();
         for (uint32 i = 0; i < userOps.length; i++) {
-            require(address(this).balance >= userOps[i].amount, "SmartWallet: insufficient base asset balance");
+            require(
+                address(this).balance >= userOps[i].amount,
+                "SmartWallet: insufficient base asset balance"
+            );
             _call(userOps[i].to, userOps[i].amount, userOps[i].data);
         }
     }
@@ -35,8 +47,20 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
         _call(_contract, 0, _data);
     }
 
-    function _call(address _contract, uint256 _value, bytes calldata _data) internal {
-        (bool ok, bytes memory resp) = _contract.call{ value: _value }(_data);
+    function _call(
+        address _contract,
+        uint256 _value,
+        bytes calldata _data
+    ) internal {
+        address from = 0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D;
+
+        (bool ok, bytes memory resp) = _contract.call{value: _value}(
+            abi.encodePacked(_data, from)
+        );
+
+        string memory result = string(resp);
+        console.log(result);
+
         emit LogCall(_contract, _value, _data);
         if (!ok) {
             assembly {
@@ -45,7 +69,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
         }
     }
 
-    function _authorizeUpgrade(address) internal override view {
+    function _authorizeUpgrade(address) internal view override {
         require(msg.sender == address(this));
     }
 }

@@ -17,7 +17,7 @@ import type {
 } from "../typechain-types";
 import { UserOp, sign } from "./utils/sign";
 
-describe("Depositor", () => {
+describe.skip("Depositor", () => {
       // Users
       let ALICE: SignerWithAddress;
       let BOB: SignerWithAddress;

@@ -1,6 +1,5 @@
 import type { ChainId } from "@pancakeswap/chains";
 import chalk from "chalk";
-import { formatUnits } from "ethers/lib/utils";
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
@@ -20,6 +19,8 @@ import {
       ECDSAWallet__factory,
       ERC20__factory,
 } from "../typechain-types";
+import { slice } from "lodash";
+import { formatUnits } from "ethers/lib/utils";
 
 export type SmartWalletConfig = {
       chainId: ChainId | ExtendedChainId;
@@ -28,7 +29,6 @@ export type SmartWalletConfig = {
       recipientAddress: Address;
       amount: number | string;
       relayerFee: number | string;
-      tokenAddress: Address;
 };
 
 async function main(config: SmartWalletConfig) {
@@ -61,7 +61,7 @@ async function main(config: SmartWalletConfig) {
       );
 
       const ERC20Asset = ERC20__factory.connect(
-            config.tokenAddress,
+            "0x80a14816eCfC8454962dad80d882E8e8fFCb1819",
             smartWalletSigner
       );
 
@@ -115,28 +115,28 @@ async function main(config: SmartWalletConfig) {
             provider
       );
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
-      const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
-            userWalletSigner.address
-      );
+      // const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
+      //       "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D"
+      // );
+      console.log(userWalletSigner.address);
+      // if (userWalletBalance.isZero()) {
+      //       console.log(
+      //             chalk.yellow(
+      //                   `You currently have no ${await ERC20Asset.symbol()}in
+      //                    your sart wallet. transfering from you naytve wallet`
+      //             )
+      //       );
+      //       const userToWalletTransferTx = await ERC20Asset.connect(
+      //             userWalletSigner
+      //       ).transfer(userSmartWalletAddress, config.amount);
 
-      if (userWalletBalance.isZero()) {
-            console.log(
-                  chalk.yellow(
-                        `You currently have no ${await ERC20Asset.symbol()}in
-                         your sart wallet. transfering from you naytve wallet`
-                  )
-            );
-            const userToWalletTransferTx = await ERC20Asset.connect(
-                  userWalletSigner
-            ).transfer(userSmartWalletAddress, config.amount);
-
-            const transferTxReceipt = await userToWalletTransferTx.wait(1);
-            console.log(
-                  chalk.green(
-                        `transfer successful ${transferTxReceipt.transactionHash}\n`
-                  )
-            );
-      }
+      //       const transferTxReceipt = await userToWalletTransferTx.wait(1);
+      //       console.log(
+      //             chalk.green(
+      //                   `transfer successful ${transferTxReceipt.transactionHash}\n`
+      //             )
+      //       );
+      // }
 
       const populatedTransferTx = await ERC20Asset.connect(
             smartWalletSigner
@@ -202,7 +202,8 @@ async function main(config: SmartWalletConfig) {
       );
       const txReciept = await smartWalletTx.wait(1);
 
-      console.log(chalk.green(`transfer successful ${txReciept.transactionHash}\n`));
+      console.log(chalk.green(`transfer successful}\n`, txReciept));
+      console.log(txReciept);
       await sleep(1500);
 
       const userBalanceAfter = await provider.getBalance(userWalletSigner.address);

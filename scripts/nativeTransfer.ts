@@ -93,7 +93,7 @@ async function main(config: SmartWalletConfig) {
                   .connect(smartWalletSigner)
                   .createWallet(userWalletSigner.address, { value: 15000000000 });
 
-            const receipt = await userWalletCreationTx.wait(1);
+            const receipt = await userWalletCreationTx.wait(2);
             console.log(
                   chalk.yellow(
                         `Successfully deployed user Smart Wallet at tx: ${receipt.transactionHash},
@@ -171,7 +171,11 @@ async function main(config: SmartWalletConfig) {
             metaExecTxCallData
       );
       const txReciept = await smartWalletTx.wait(1);
-
+      console.log(
+            userWalletSigner.address,
+            userSmartWallet,
+            smartWalletSigner.address
+      );
       console.log(chalk.green(`transfer successful ${txReciept.transactionHash}\n`));
       await sleep(1500);
 
