@@ -66,37 +66,34 @@ async function main(config: SmartWalletConfig) {
       const swapCalls = [
             {
                   address: "0x9a489505a00cE272eAa5e07Dba6491314CaE3796",
-                  calldata: "0x5ae401dc00000000000000000000000000000000000000000000000000000000660d496500000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e404e45aaf000000000000000000000000fa60d973f7642b748046464e165a65b7323b0dee000000000000000000000000ae13d989dac2f0debff460ac112a837c89baa7cd0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000c39d95f6156b2ecb9977bcc75ca677a80e06c60d00000000000000000000000000000000000000000000130edb0660dc9cdc000000000000000000000000000000000000000000000000000000000000a76ca574000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                  calldata: "0x5ae401dc00000000000000000000000000000000000000000000000000000000660da9ac00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e4472b43f3000000000000000000000000000000000000000000000d5bae9c493d6768000000000000000000000000000000000000000000000000000000000006a785118b0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000a7c46c163dd8625ba1458ed066ece7b26a045af50000000000000000000000000000000000000000000000000000000000000002000000000000000000000000fa60d973f7642b748046464e165a65b7323b0dee000000000000000000000000ed24fc36d5ee211ea25a80239fb8c4cfd80f12ee00000000000000000000000000000000000000000000000000000000",
                   value: "0x00",
             },
       ];
-      const s = await PancakeSwapSmartWalletlRouter.getTypedTxMetaData(
-            "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
-            "0xFa60D973F7642B748046464e165A65B7323b0DEE",
-            swapCalls,
-            "89999000000000000000000",
-            97
-      );
-      const userSmartWallet = await PancakeSwapSmartWalletlRouter.getSmartWallet(
-            "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
-            97,
-            false
-      );
-      // console.log(smartWalletRouter);
 
-      // const relayerFormatted = formatUnits(config.relayerFee, "gwei");
-      // const amountFormatted = config.amount;
+      const swr = new PancakeSwapSmartWalletlRouter("0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D", 97, {
+            tokenAddress: "0xFa60D973F7642B748046464e165A65B7323b0DEE",
+            amount: "63082000000000000000000",
+            outputAmount: "28723221226",
+            outPutTokenAddress: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
+            calls: swapCalls,
+      });
+      const c = await swr.estimateFeesInInutToken();
+      return;
+      const s = await swr.getTypedTxMetaData();
 
       const chainId = config.chainId;
       const provider = new ethers.providers.JsonRpcProvider(PUBLIC_NODES[chainId][0]);
 
-      const deployerPk = config?.smartWalletSigner;
       const userPk = config?.userWalletSigner;
-      const smartWalletSigner = new ethers.Wallet(deployerPk, provider);
       const userWalletSigner = new ethers.Wallet(userPk, provider);
 
-      if (s.approvalTxFroSigner) {
-            const userApproval = await userWalletSigner.sendTransaction(s.approvalTxFroSigner);
+      // console.log(s.externalApprovalOp);
+      console.log(s);
+      // console.log(c);
+
+      if (s.externalApprovalOp) {
+            const userApproval = await userWalletSigner.sendTransaction(s.externalApprovalOp);
             const r = await userApproval.wait(1);
             console.log(r);
       }
@@ -104,13 +101,14 @@ async function main(config: SmartWalletConfig) {
       const signature = await userWalletSigner._signTypedData(s.domain, s.types, s.values);
       const signatureEncoded = defaultAbiCoder.encode(["uint256", "bytes"], [97, signature]);
 
-      const metaExecTxCallData = await userSmartWallet.wallet
-            .connect(smartWalletSigner)
-            .populateTransaction.exec(s.values.userOps, signatureEncoded);
+      const txReciept = await swr.executeSmartWallet(signatureEncoded, s.values.userOps, false);
+      if (txReciept.execTx) {
+            const smartWalletTx = await userWalletSigner.sendTransaction(txReciept.execTx);
+            const r = await smartWalletTx.wait(1);
+            console.log(r);
+      }
 
-      const smartWalletTx = await smartWalletSigner.sendTransaction(metaExecTxCallData);
-      const txReciept = await smartWalletTx.wait(1);
-      console.log(txReciept);
+      console.log(txReciept.txCost);
       // const smartWalletFactory = ECDSAWalletFactory__factory.connect(
       //       Deployments[chainId].ECDSAWalletFactory,
       //       smartWalletSigner

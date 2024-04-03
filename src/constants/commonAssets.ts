@@ -21,6 +21,7 @@ import {
       baseTestnetTokens,
       baseSepoliaTokens,
 } from "@pancakeswap/tokens";
+import { Address } from "viem";
 
 const spreadObject = (list: { [token: string]: ERC20Token }) => ({ ...list });
 
@@ -47,3 +48,9 @@ export const AssetAdapter: { [chain in ChainId]: { [token: string]: ERC20Token }
             [ChainId.BASE_SEPOLIA]: spreadObject(baseSepoliaTokens),
             [ChainId.SEPOLIA]: spreadObject(sepoliaTokens),
       };
+
+      export const SupportedFeeTokens: { [chain in ChainId]: Address[]} = {
+            [ChainId.BSC_TESTNET]: [
+                  "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"
+            ]
+      }

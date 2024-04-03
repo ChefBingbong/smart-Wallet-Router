@@ -49,15 +49,14 @@ export const signTypedTx = async (
 
 export const typedMetaTx = async (
       userOps: UserOp[],
-      smartWalletAddress: string,
       nonce: number | BigNumber,
-      chainID: number,
-      signatureChainID: number
+      smartWalletAddress: string,
+      chainId: number,
 ) => {
       const domain = {
             name: "ECDSAWallet",
             version: "0.0.1",
-            chainId: signatureChainID,
+            chainId: chainId,
             verifyingContract: smartWalletAddress,
       };
 
@@ -74,12 +73,11 @@ export const typedMetaTx = async (
                   { name: "sigChainID", type: "uint256" },
             ],
       };
-
       const values = {
             userOps: userOps,
             nonce: nonce,
-            chainID: chainID,
-            sigChainID: signatureChainID,
+            chainID: chainId,
+            sigChainID: chainId,
       };
 
       return { domain, types, values };
