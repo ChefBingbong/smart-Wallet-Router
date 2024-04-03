@@ -10,6 +10,10 @@ const defaultAccounts = [
 
 const config: HardhatUserConfig = {
       networks: {
+            local: {
+                  url: " http://127.0.0.1:8545/",
+                  accounts: defaultAccounts,
+            },
             catalogMainnet: {
                   url: "https://rpc.catalog.fi/testnet",
                   accounts: defaultAccounts,
@@ -95,7 +99,7 @@ const config: HardhatUserConfig = {
                   accounts: defaultAccounts,
             },
             bnbTestnet: {
-                  url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+                  url: "https://data-seed-prebsc-1-s2.binance.org:8545/",
                   accounts: defaultAccounts,
             },
             moonbeamMainnet: {

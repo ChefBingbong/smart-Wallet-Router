@@ -8,7 +8,7 @@ import chalk from "chalk";
 import { ethers } from "hardhat";
 import type { Address } from "viem";
 import type { UserOp } from "../src/api";
-import { Deployments, type ExtendedChainId } from "../src/constants/deploymentUtils";
+import { Deployments, ExtendedChainId } from "../src/constants/deploymentUtils";
 import { PUBLIC_NODES } from "../src/provider/chains";
 import { sleep } from "../src/utils/sleep";
 import { signTypedTx } from "../src/utils/typedMetaTx";
@@ -54,77 +54,53 @@ async function main(config: SmartWalletConfig) {
 
       const userSmartWalletAddress = await smartWalletFactory.walletAddress(
             userWalletSigner.address,
-            1
+            0
       );
 
-      const userBalance = await provider.getBalance(userSmartWalletAddress);
-      const userSWBalance = await provider.getBalance(smartWalletSigner.address);
-      const recipientBalance = await provider.getBalance(config.recipientAddress);
+      const userBalancBeforer = await provider.getBalance(userWalletSigner.address);
+      const signerBalBefore = await provider.getBalance(smartWalletSigner.address);
+      const userSWBalanceBefore = await provider.getBalance(userSmartWalletAddress);
+      const recipientBalanceBefore = await provider.getBalance(
+            config.recipientAddress
+      );
 
-      console.log(chalk.yellow(`User bal before: ${userBalance}`));
-      console.log(chalk.yellow(`User Smart Wallet bal before: ${userSWBalance}`));
-      console.log(chalk.yellow(`Recipient bal before: ${recipientBalance}\n`));
+      console.log(chalk.yellow(`User bal before: ${userBalancBeforer}`));
+      console.log(chalk.yellow(`sigmert bal before: ${signerBalBefore}`));
+      console.log(
+            chalk.yellow(`User Smart Wallet bal before: ${userSWBalanceBefore}`)
+      );
+      console.log(chalk.yellow(`Recipient bal before: ${recipientBalanceBefore}\n`));
 
       await sleep(2000);
 
       const userWalletContractCode = await provider.getCode(userSmartWalletAddress);
-
-      let isCreationTx = false;
       if (userWalletContractCode === "0x") {
-            isCreationTx = true;
-            console.log(
-                  chalk.yellow(`Wallet Not deployed yet. initiating creation Tx.`)
-            );
-            await sleep(2000);
-
-            const relayerFee = Number(config.relayerFee);
-            const feeThreshold = 100;
-
-            if (!relayerFee || Number(relayerFormatted) < feeThreshold) {
-                  console.log(
-                        chalk.red(
-                              `The relayer needs to be funded on wallet creation to 
-                              fund the deployement cost. please add relayer fee param!`
-                        )
-                  );
-                  return;
-            }
-            const userWalletCreationTx = await smartWalletFactory
-                  .connect(smartWalletSigner)
-                  .createWallet(userWalletSigner.address, { value: 15000000000 });
-
-            const receipt = await userWalletCreationTx.wait(2);
             console.log(
                   chalk.yellow(
-                        `Successfully deployed user Smart Wallet at tx: ${receipt.transactionHash},
-                        Now Proceeding to execute Transfer Tx.`
+                        `Smart wallet not deployed for ${userWalletSigner.address}, please run deloySmartWallet.ts`
                   )
             );
+            return;
       }
-      console.log(
-            chalk.yellow(
-                  `Skipping creation Tx, wallet already deoloyed. Executing native transfer`
-            )
-      );
-      await sleep(2000);
+
       const userSmartWallet = ECDSAWallet__factory.connect(
             userSmartWalletAddress,
-            provider
+            smartWalletSigner
       );
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
 
-      const relayerTx: UserOp = {
-            to: smartWalletSigner.address,
-            amount: relayerFormatted,
-            data: "0x",
-      };
-      const transferTx: UserOp = {
-            to: config.recipientAddress,
-            amount: amountFormatted,
-            data: "0x",
-      };
+      // await smartWalletSigner.sendTransaction({
+      //       to: userSmartWalletAddress,
+      //       value: "100000000000000000",
+      // });
+      const userOps: UserOp[] = [
+            {
+                  to: userSmartWalletAddress,
+                  amount: amountFormatted,
+                  data: "0x",
+            },
+      ];
 
-      const userOps = isCreationTx ? [relayerTx, transferTx] : [transferTx];
       const signature = await signTypedTx(
             userOps,
             userWalletSigner,
@@ -140,29 +116,29 @@ async function main(config: SmartWalletConfig) {
             signature,
       };
 
-      if (isCreationTx && config.relayerFee) {
-            try {
-                  const gasPrice = await userSmartWallet.provider.getGasPrice();
-                  const gas = await userSmartWallet.estimateGas.exec(
-                        transaction.userOps,
-                        transaction.signature,
-                        { gasLimit: 200000 }
-                  );
+      // if (isCreationTx && config.relayerFee) {
+      //       try {
+      //             const gasPrice = await userSmartWallet.provider.getGasPrice();
+      //             const gas = await userSmartWallet.estimateGas.exec(
+      //                   transaction.userOps,
+      //                   transaction.signature,
+      //                   { gasLimit: 200000 }
+      //             );
 
-                  const txCost = gasPrice.mul(gas);
-                  if (txCost.gt(transaction.userOps[0].amount)) {
-                        console.log(
-                              chalk.red(`
-                              Insufficient fee payment for Smart wallet, gas 
-                              cost is greater than fee`)
-                        );
-                        return;
-                  }
-            } catch (err: unknown) {
-                  console.log(parseContractError(err));
-                  return;
-            }
-      }
+      //             const txCost = gasPrice.mul(gas);
+      //             if (txCost.gt(transaction.userOps[0].amount)) {
+      //                   console.log(
+      //                         chalk.red(`
+      //                         Insufficient fee payment for Smart wallet, gas
+      //                         cost is greater than fee`)
+      //                   );
+      //                   return;
+      //             }
+      //       } catch (err: unknown) {
+      //             console.log(parseContractError(err));
+      //             return;
+      //       }
+      // }
       const metaExecTxCallData = await userSmartWallet
             .connect(smartWalletSigner)
             .populateTransaction.exec(userOps, signature);
@@ -171,34 +147,30 @@ async function main(config: SmartWalletConfig) {
             metaExecTxCallData
       );
       const txReciept = await smartWalletTx.wait(1);
-      console.log(
-            userWalletSigner.address,
-            userSmartWallet,
-            smartWalletSigner.address
-      );
+
       console.log(chalk.green(`transfer successful ${txReciept.transactionHash}\n`));
       await sleep(1500);
 
       const userBalanceAfter = await provider.getBalance(userWalletSigner.address);
-      const userSWBalanceAfter = await provider.getBalance(
-            smartWalletSigner.address
-      );
+      const signerBalAfter = await provider.getBalance(smartWalletSigner.address);
+      const userSWBalanceAfter = await provider.getBalance(userSmartWalletAddress);
       const recipientBalanceAfter = await provider.getBalance(
             config.recipientAddress
       );
       console.log(chalk.yellow(`User bal after: ${userBalanceAfter}`));
+      console.log(chalk.yellow(`signer Wallet bal after: ${signerBalAfter}`));
       console.log(chalk.yellow(`Smart Wallet bal after: ${userSWBalanceAfter}`));
       console.log(chalk.yellow(`Recipient bal after: ${recipientBalanceAfter}`));
 }
 
 const customConfig: SmartWalletConfig = {
-      chainId: ChainId.POLYGON_ZKEVM_TESTNET,
+      chainId: ExtendedChainId.LOCAL,
       smartWalletSigner:
-            "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
+            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
       userWalletSigner:
-            "225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a",
+            "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
       recipientAddress: "0x356c5fA625F89481a76d9f7Af4eD866CD8c6CB4B",
-      amount: 10000,
+      amount: "10000000000000000",
       relayerFee: 18000000000,
 };
 

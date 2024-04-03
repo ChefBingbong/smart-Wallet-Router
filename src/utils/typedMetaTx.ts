@@ -46,3 +46,41 @@ export const signTypedTx = async (
 
       return signatureEncoded;
 };
+
+export const typedMetaTx = async (
+      userOps: UserOp[],
+      smartWalletAddress: string,
+      nonce: number | BigNumber,
+      chainID: number,
+      signatureChainID: number
+) => {
+      const domain = {
+            name: "ECDSAWallet",
+            version: "0.0.1",
+            chainId: signatureChainID,
+            verifyingContract: smartWalletAddress,
+      };
+
+      const types = {
+            UserOp: [
+                  { name: "to", type: "address" },
+                  { name: "amount", type: "uint256" },
+                  { name: "data", type: "bytes" },
+            ],
+            ECDSAExec: [
+                  { name: "userOps", type: "UserOp[]" },
+                  { name: "nonce", type: "uint256" },
+                  { name: "chainID", type: "uint256" },
+                  { name: "sigChainID", type: "uint256" },
+            ],
+      };
+
+      const values = {
+            userOps: userOps,
+            nonce: nonce,
+            chainID: chainID,
+            sigChainID: signatureChainID,
+      };
+
+      return { domain, types, values };
+};

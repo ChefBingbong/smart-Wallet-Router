@@ -32,34 +32,23 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
         UserOp[] calldata userOps,
         bytes calldata _signature
     ) external {
-        // _verify(userOps, _signature);
+        _verify(userOps, _signature);
         _incrementNonce();
         for (uint32 i = 0; i < userOps.length; i++) {
-            require(
-                address(this).balance >= userOps[i].amount,
-                "SmartWallet: insufficient base asset balance"
-            );
-            _call(userOps[i].to, userOps[i].amount, userOps[i].data);
+            // require(
+            //     address(this).balance >= userOps[i].amount,
+            //     "SmartWallet: insufficient base asset balance"
+            // );
+            _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
         }
     }
 
-    function call(address _contract, bytes calldata _data) external {
-        _call(_contract, 0, _data);
-    }
-
     function _call(
-        address _contract,
+        address payable _contract,
         uint256 _value,
         bytes calldata _data
     ) internal {
-        address from = 0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D;
-
-        (bool ok, bytes memory resp) = _contract.call{value: _value}(
-            abi.encodePacked(_data, from)
-        );
-
-        string memory result = string(resp);
-        console.log(result);
+        (bool ok, bytes memory resp) = _contract.call{value: _value}(_data);
 
         emit LogCall(_contract, _value, _data);
         if (!ok) {

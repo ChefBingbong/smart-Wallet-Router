@@ -8,6 +8,7 @@ import {
       ECDSAWallet__factory,
       IWallet,
 } from "../typechain-types";
+import { Address } from "viem";
 
 config();
 
@@ -154,7 +155,7 @@ const WALLET_ABI_EXACT = `[
 ]`;
 
 export interface SmartWallet {
-      address: string;
+      address: Address;
       wallet?: IWallet;
 }
 

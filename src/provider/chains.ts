@@ -62,7 +62,7 @@ export const PUBLIC_NODES = {
             "https://bsc-dataseed1.defibit.io",
             "https://bsc-dataseed1.binance.org",
       ].filter(Boolean),
-      [ChainId.BSC_TESTNET]: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+      [ChainId.BSC_TESTNET]: ["https://data-seed-prebsc-1-s2.binance.org:8545"],
       [ChainId.ETHEREUM]: [
             "https://ethereum.publicnode.com",
             "https://eth.llamarpc.com",
@@ -90,5 +90,7 @@ export const PUBLIC_NODES = {
       [ChainId.ARBITRUM_SEPOLIA]: arbitrumSepolia.rpcUrls.default.http,
       [ChainId.BASE_SEPOLIA]: baseSepolia.rpcUrls.default.http,
       [ExtendedChainId.POLYGON_TESTNET]: [ "https://rpc.ankr.com/polygon_mumbai"],
+      [ExtendedChainId.LOCAL]: [ "http://127.0.0.1:8545/"],
+
 
 } satisfies Record<ChainId | ExtendedChainId, readonly string[]>

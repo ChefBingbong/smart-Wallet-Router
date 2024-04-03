@@ -8,6 +8,7 @@ export enum Contracts {
 }
 export enum ExtendedChainId {
       POLYGON_TESTNET = 80001,
+      LOCAL = 31337,
 }
 type Deployments = {
       [chain in ChainId | ExtendedChainId]: { [contract in Contracts]: Address };
@@ -23,6 +24,12 @@ export const Deployments: Deployments = {
             SmartWalletFactory: "0xab381dB93d006bF653D62c1727D418f6E76a28e7",
             Depositor: "0x",
             ...polygonTokens,
+      },
+      [ExtendedChainId.LOCAL]: {
+            ECDSAWalletFactory: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            SmartWalletFactory: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            Depositor: "0x",
+            weth: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
       },
       [ChainId.ETHEREUM]: {
             ECDSAWalletFactory: "0x",
@@ -40,8 +47,8 @@ export const Deployments: Deployments = {
             Depositor: "0x",
       },
       [ChainId.BSC_TESTNET]: {
-            ECDSAWalletFactory: "0x",
-            SmartWalletFactory: "0x",
+            ECDSAWalletFactory: "0xe4825036815509CaA36bC4A2a73299Dd68AF49a6",
+            SmartWalletFactory: "0xeDc90cd080e0b3ADCd9Dd922DC67fC1559268D08",
             Depositor: "0x",
       },
       [ChainId.ZKSYNC_TESTNET]: {
