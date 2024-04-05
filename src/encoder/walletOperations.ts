@@ -1,7 +1,7 @@
 import type { AbiParametersToPrimitiveTypes } from "abitype";
 import { encodeAbiParameters, parseAbiItem, toFunctionSelector, type Address, type Hex } from "viem";
 import type { UserOp } from "../../test/utils/sign";
-import { SwapCall } from "../smartWalletRouter2";
+import { SwapCall } from "../types/smartWallet";
 
 export type ABIType = typeof ABI_PARAMETER;
 export type OperationUsed = keyof typeof ABI_PARAMETER;

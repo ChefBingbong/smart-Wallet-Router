@@ -25,13 +25,3 @@ export const getCakePriceFromOracle = async () => {
 
       return formatUnits(data, 8);
 };
-
-export const getTokenPriceByNumber = (baseCurrency: Currency, quoteCurrency: Currency, price: number) => {
-      const quoteAmount = tryParseAmount(String(price), baseCurrency);
-      const baseAmount = tryParseAmount("1", quoteCurrency);
-      if (!baseAmount || !quoteAmount) {
-            return undefined;
-      }
-
-      return new Price({ baseAmount, quoteAmount });
-};

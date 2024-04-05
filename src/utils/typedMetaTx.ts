@@ -1,36 +1,13 @@
 import { defaultAbiCoder } from "@ethersproject/abi";
 import type { BigNumber, Wallet } from "ethers";
-import type { UserOp } from "../api";
 import { Address } from "viem";
+import { UserOp } from "../types/smartWallet";
+import { TypedSmartWalletData } from "../types/eip712";
 
-export type DomainType = {
-      name: string;
-      version: string;
-      chainId: number;
-      verifyingContract: Address;
-};
-
-export type Types = {
-      name: string;
-      type: string;
-};
-
-export type ECDSAExecType = {
-      userOps: UserOp[];
-      nonce: number | BigNumber;
-      chainID: number;
-      sigChainID: number;
-};
-
-export type EIP712TypedData = {
-      domain: DomainType;
-      types: { UserOp: Types[]; ECDSAExec: Types[] };
-      values: ECDSAExecType;
-};
 export const signTypedTx = async (
       userOps: UserOp[],
       signer: Wallet,
-      smartWalletAddress: string,
+      smartWalletAddress: Address,
       nonce: number | BigNumber,
       chainID: number,
       signatureChainID: number,
@@ -71,10 +48,10 @@ export const signTypedTx = async (
 
 export const typedMetaTx = (
       userOps: UserOp[],
-      nonce: number | BigNumber,
-      smartWalletAddress: string,
+      nonce: bigint,
+      smartWalletAddress: Address,
       chainId: number,
-): { domain: DomainType; types: { UserOp: Types[]; ECDSAExec: Types[] }; values: ECDSAExecType } => {
+): TypedSmartWalletData => {
       const domain = {
             name: "ECDSAWallet",
             version: "0.0.1",

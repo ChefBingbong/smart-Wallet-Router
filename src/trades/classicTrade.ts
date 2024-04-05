@@ -1,23 +1,14 @@
-import { ChainId } from "@pancakeswap/chains";
+import { Currency, TradeType } from "@pancakeswap/sdk";
+import { SmartRouter, SmartRouterTrade } from "@pancakeswap/smart-router";
+import { PancakeSwapUniversalRouter, getUniversalRouterAddress } from "@pancakeswap/universal-router-sdk";
 import { SupportedFeeTokens } from "../constants/commonAssets";
 import { Command, RouterTradeType } from "../encoder/buildOperation";
 import { OperationType, WalletOperationBuilder } from "../encoder/walletOperations";
-import { SmartWalletTrade, SmartWalletTradeOptions, SwapCall } from "../smartWalletRouter2";
-import { SmartWallet } from "../api";
-import {
-      PancakeSwapOptions,
-      PancakeSwapUniversalRouter,
-      getUniversalRouterAddress,
-} from "@pancakeswap/universal-router-sdk";
-import { SmartRouter, SmartRouterTrade } from "@pancakeswap/smart-router";
-import { Currency, CurrencyAmount, TradeType } from "@pancakeswap/sdk";
-import { Address } from "viem";
 import { signer } from "../provider/walletClient";
+import { SmartWalletTradeOptions } from "../types/smartWallet";
 
-// Wrapper for pancakeswap router-sdk trade entity to encode swaps for Universal Router
 export class ClasicTrade implements Command {
       readonly tradeType: RouterTradeType;
-      readonly type: TradeType;
 
       constructor(
             public trade: SmartRouterTrade<TradeType>,

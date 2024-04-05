@@ -5,6 +5,11 @@ export enum RouterTradeType {
       CustomFeeCurrencyTrade = "CustomFeeCurrencyTrade",
 }
 
+export enum Routers {
+      UniversalRouter = "UniversalRouter",
+      SmartRouter = "SmartRouter",
+}
+
 // interface for entities that can be encoded as a Universal Router command
 export interface Command {
       tradeType: keyof typeof RouterTradeType;

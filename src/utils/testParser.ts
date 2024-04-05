@@ -1,11 +1,13 @@
 import { SmartRouter, SmartRouterTrade } from "@pancakeswap/smart-router";
-import { PancakeSwapSmartWalletRouter, Routers, SmartWalletTradeOptions } from "../smartWalletRouter2";
+import { PancakeSwapSmartWalletRouter } from "../smartWalletRouter";
 import { CurrencyAmount, TradeType } from "@pancakeswap/swap-sdk-core";
 import { BUSD_TESTNET, CAKE_TESTNET } from "@pancakeswap/tokens";
 import { getPublicClient } from "../provider/walletClient";
 import { getViemClients } from "../provider/client";
 import { WNATIVE } from "@pancakeswap/sdk";
 import { RouterTradeType } from "../encoder/buildOperation";
+import { Routers } from "../encoder/buildOperation";
+import { SmartWalletTradeOptions } from "../types/smartWallet";
 
 const trade = {
       tradeType: 0,
@@ -223,11 +225,11 @@ async function main() {
             currencyA: CAKE_TESTNET,
             currencyB: WNATIVE[97],
             // subgraphProvider: ({ chainId }) => (chainId ? v3Clients[chainId] : undefined),
-            onChainProvider: getViemClients,
+            onChainProvider: getViemClients as any,
             blockNumber: await getPublicClient({ chainId: 97 }).getBlockNumber(),
       });
       const poolProvider = SmartRouter.createStaticPoolProvider(pools);
-      const quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: getPublicClient });
+      const quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: getPublicClient as any });
       const deferAmount = CurrencyAmount.fromRawAmount(CAKE_TESTNET, (50 * 10 ** 15).toString());
 
       const res = await SmartRouter.getBestTrade(deferAmount, WNATIVE[97], TradeType.EXACT_INPUT, {
@@ -248,8 +250,8 @@ async function main() {
       );
 
       const feeOptions = await PancakeSwapSmartWalletRouter.estimateSmartWalletFees({
-            userOps: USEROP,
-            trade: res,
+            userOps: USEROP as any,
+            trade: res as any,
             chainId: 97,
       });
       const ops: SmartWalletTradeOptions = {
@@ -263,7 +265,7 @@ async function main() {
             feeOptions,
       };
 
-      const r = PancakeSwapSmartWalletRouter.buildSmartWalletTrade(res, ops) as any;
+      const r = PancakeSwapSmartWalletRouter.buildSmartWalletTrade(res as any, ops) as any;
       console.log(r);
 }
 main();
