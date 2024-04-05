@@ -27,7 +27,7 @@ export interface SwapCall {
       value: Hex;
 }
 
-type SmartWalletTrade = {
+export type SmartWalletTrade = {
       tokenAddress: Address;
       outPutTokenAddress: Address;
       amount: string;

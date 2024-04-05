@@ -713,7 +713,35 @@
     "@pancakeswap/sdk" "5.8.0"
     viem "1.19.11"
 
-"@pancakeswap/sdk@5.8.0", "@pancakeswap/sdk@^5.8.0":
+"@pancakeswap/pcsx-sdk@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@pancakeswap/pcsx-sdk/-/pcsx-sdk-0.0.2.tgz#68486353b7bf9c21931b0f6d80d311d0bb3f6354"
+  integrity sha512-neqdwBe6bZaKrSC6ABamE4uxmPnBA4h85g258710IrpY2PP+ga8R/HylqDUgLS/BN20hR/5afR7a311vK/tjnQ==
+  dependencies:
+    "@pancakeswap/chains" "0.4.1"
+    "@pancakeswap/permit2-sdk" "1.0.2"
+    "@pancakeswap/swap-sdk-core" "1.1.0"
+    dayjs "^1.11.10"
+    viem "1.19.11"
+
+"@pancakeswap/permit2-sdk@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@pancakeswap/permit2-sdk/-/permit2-sdk-1.0.2.tgz#4b924105cd2e9d12380eb5a4c0f95cbce870a358"
+  integrity sha512-XQl+lIKqU91vF/9gCJdiAfOIpkZePzD3rxcB+83q/A6fNuea7eB32TH23UkkQNbzkya30P3w/MYxt0E5ANtMkg==
+  dependencies:
+    "@pancakeswap/chains" "0.4.1"
+    "@pancakeswap/sdk" "5.8.0"
+    tiny-invariant "^1.3.1"
+    viem "1.19.11"
+
+"@pancakeswap/price-api-sdk@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@pancakeswap/price-api-sdk/-/price-api-sdk-1.1.1.tgz#fe857c3155aa30adb4b73f69909023b44502c403"
+  integrity sha512-sSrtzOREutRItH46EWahA30s8i/fZgYOBv4stJm08/7OlpC/DRVyNKiJBLIkdE+3t5VIwiUt/q1JYWCL89b9vA==
+  dependencies:
+    "@pancakeswap/chains" "0.4.1"
+
+"@pancakeswap/sdk@5", "@pancakeswap/sdk@5.8.0":
   version "5.8.0"
   resolved "https://registry.yarnpkg.com/@pancakeswap/sdk/-/sdk-5.8.0.tgz#15c0925d4716de4bbce0789c3dd4c7e1eddd302f"
   integrity sha512-gDeeDwq38xMxuvVSASjX4HxRbKfrdNlJQJwwo7dEpExwRJb1QKrMeFEKl1dTW/zReeiIW+bvXseTYQnY8hAmKQ==
@@ -727,7 +755,32 @@
     toformat "^2.0.0"
     viem "1.19.11"
 
-"@pancakeswap/smart-router@^6.0.1":
+"@pancakeswap/smart-router@5":
+  version "5.1.8"
+  resolved "https://registry.yarnpkg.com/@pancakeswap/smart-router/-/smart-router-5.1.8.tgz#cc4822f5f2414e60fbf032cbeb55016b69868cfa"
+  integrity sha512-RouVSNra5KaGZOehDuljhXLmltQ6VfmMoRunQpRERzJfg8Ds8aUqOoZiA+Q8Gw/nbHnY2kM4fG3Sz6vzFPRHQw==
+  dependencies:
+    "@pancakeswap/chains" "0.4.1"
+    "@pancakeswap/gauges" "1.1.7"
+    "@pancakeswap/multicall" "3.5.0"
+    "@pancakeswap/sdk" "5.8.0"
+    "@pancakeswap/stable-swap-sdk" "1.0.3"
+    "@pancakeswap/swap-sdk-core" "1.1.0"
+    "@pancakeswap/token-lists" "0.0.11"
+    "@pancakeswap/tokens" "0.6.11"
+    "@pancakeswap/v3-sdk" "3.8.0"
+    async-retry "^1.3.1"
+    debug "^4.3.4"
+    graphql "^16.8.1"
+    graphql-request "5.0.0"
+    lodash "^4.17.21"
+    mnemonist "^0.38.3"
+    stats-lite "^2.2.0"
+    tiny-invariant "^1.3.0"
+    viem "1.19.11"
+    zod "^3.22.3"
+
+"@pancakeswap/smart-router@6.0.1":
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/@pancakeswap/smart-router/-/smart-router-6.0.1.tgz#f71b2437c42e1c827010e4bb89a1907919be93e3"
   integrity sha512-37hcLDnh55DWSIYTdEgACjT7vzSsfra6GGkMElW0DIK4CsI6sayo2hZ2fPH55K7uOxt/guma4LQBcUPUvEpTVA==
@@ -762,7 +815,7 @@
     "@pancakeswap/tokens" "0.6.11"
     tiny-invariant "^1.3.0"
 
-"@pancakeswap/swap-sdk-core@1.1.0":
+"@pancakeswap/swap-sdk-core@1.1.0", "@pancakeswap/swap-sdk-core@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@pancakeswap/swap-sdk-core/-/swap-sdk-core-1.1.0.tgz#4edc1ef77db9188a1f90153b1983c72326a942e4"
   integrity sha512-RBl7M8NoViUeRJuISvkYXCwzeNRjGyMPhZTenJyHVrrkV0Wb37S8RCPirYzVt/63YtU0ZxXHcqCxD64XogtE/Q==
@@ -790,6 +843,20 @@
     "@pancakeswap/chains" "0.4.1"
     "@pancakeswap/sdk" "5.8.0"
     "@pancakeswap/token-lists" "0.0.11"
+
+"@pancakeswap/universal-router-sdk@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@pancakeswap/universal-router-sdk/-/universal-router-sdk-1.0.14.tgz#6b227f3d90b6e5b68304c2a72d88cf6279377191"
+  integrity sha512-4kjSM1HgI1zkfL+RZD/heGdDP4q8rrupn7cy0KtfeTF3qsbC71cAS2PgHMGxE8led9PYaOHxo6wBiGbuIcxTYw==
+  dependencies:
+    "@pancakeswap/chains" "0.4.1"
+    "@pancakeswap/permit2-sdk" "1.0.2"
+    "@pancakeswap/sdk" "5.8.0"
+    "@pancakeswap/smart-router" "6.0.1"
+    "@pancakeswap/v3-sdk" "3.8.0"
+    abitype "^0.9.8"
+    tiny-invariant "^1.1.0"
+    viem "1.19.11"
 
 "@pancakeswap/v3-sdk@3.8.0", "@pancakeswap/v3-sdk@^3.8.0":
   version "3.8.0"
@@ -1191,6 +1258,11 @@ abitype@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/abitype/-/abitype-1.0.0.tgz#237176dace81d90d018bebf3a45cb42f2a2d9e97"
   integrity sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==
+
+abitype@^0.9.8:
+  version "0.9.10"
+  resolved "https://registry.yarnpkg.com/abitype/-/abitype-0.9.10.tgz#fa6fa30a6465da98736f98b6c601a02ed49f6eec"
+  integrity sha512-FIS7U4n7qwAT58KibwYig5iFG4K61rbhAqaQh/UWj8v1Y8mjX3F8TC9gd8cz9yT1TYel9f8nS5NO5kZp2RW0jQ==
 
 accepts@~1.3.8:
   version "1.3.8"
@@ -2020,6 +2092,11 @@ dashdash@^1.12.0:
   integrity sha512-jRFi8UDGo6j+odZiEpjazZaWqEal3w/basFjQHQEwVtZJGDpxbH1MeYluwCS8Xq5wmLJooDlMgvVarmWfGM44g==
   dependencies:
     assert-plus "^1.0.0"
+
+dayjs@^1.11.10:
+  version "1.11.10"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.10.tgz#68acea85317a6e164457d6d6947564029a6a16a0"
+  integrity sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==
 
 death@^1.1.0:
   version "1.1.0"
@@ -5304,7 +5381,7 @@ tildify@2.0.0:
   resolved "https://registry.yarnpkg.com/tildify/-/tildify-2.0.0.tgz#f205f3674d677ce698b7067a99e949ce03b4754a"
   integrity sha512-Cc+OraorugtXNfs50hU9KS369rFXCfgGLpfCfvlc+Ud5u6VWmUQsOAa9HbTvheQdYnrdJqqv1e5oIqXppMYnSw==
 
-tiny-invariant@^1.1.0, tiny-invariant@^1.3.0:
+tiny-invariant@^1.1.0, tiny-invariant@^1.3.0, tiny-invariant@^1.3.1:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/tiny-invariant/-/tiny-invariant-1.3.3.tgz#46680b7a873a0d5d10005995eb90a70d74d60127"
   integrity sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==
