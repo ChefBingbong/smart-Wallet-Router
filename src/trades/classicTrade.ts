@@ -10,23 +10,20 @@ import {
       getUniversalRouterAddress,
 } from "@pancakeswap/universal-router-sdk";
 import { SmartRouter, SmartRouterTrade } from "@pancakeswap/smart-router";
-import { TradeType } from "@pancakeswap/sdk";
+import { Currency, CurrencyAmount, TradeType } from "@pancakeswap/sdk";
 import { Address } from "viem";
+import { signer } from "../provider/walletClient";
 
-export type WalletTradeOptions = SmartWalletTradeOptions & {
-      inputToken: Address;
-      outputToken: Address;
-};
 // Wrapper for pancakeswap router-sdk trade entity to encode swaps for Universal Router
 export class ClasicTrade implements Command {
-      readonly tradeType: RouterTradeType = RouterTradeType.ClassicTrade;
+      readonly tradeType: RouterTradeType;
       readonly type: TradeType;
 
       constructor(
             public trade: SmartRouterTrade<TradeType>,
-            public options: WalletTradeOptions,
+            public options: SmartWalletTradeOptions,
       ) {
-            this.type = this.trade.tradeType;
+            this.tradeType = this.options.SmartWalletTradeType;
             const { underlyingTradeOptions } = options;
             if (underlyingTradeOptions.fee && underlyingTradeOptions.flatFee) {
                   throw new Error("Cannot specify both fee and flatFee");
@@ -38,14 +35,14 @@ export class ClasicTrade implements Command {
             const { chainId, smartWalletDetails } = options;
             const { slippageTolerance } = options.underlyingTradeOptions;
 
+            const executeFromWallet = this.tradeType === RouterTradeType.CustomFeeCurrencyTrade;
+
+            if (executeFromWallet && !options.feeOptions) {
+                  throw new Error("Fee data must be provided for this trade type");
+            }
             const inputToken = trade.inputAmount.currency.wrapped.address;
             const outputToken = trade.outputAmount.currency.wrapped.address;
-
-            const isInputAssetStable = SupportedFeeTokens[chainId].includes(inputToken);
-            const isOutputAssetStable = SupportedFeeTokens[chainId].includes(outputToken);
-
             const amountIn = SmartRouter.maximumAmountIn(trade, slippageTolerance, trade.inputAmount).quotient;
-            const amountOut = SmartRouter.minimumAmountOut(trade, slippageTolerance, trade.outputAmount).quotient;
 
             if (this.options.requiresExternalApproval) {
                   planner.addExternalUserOperation(
@@ -54,13 +51,34 @@ export class ClasicTrade implements Command {
                         inputToken,
                   );
             }
-            this.addMandatoryOperations(planner);
+            this.addMandatoryOperations(planner, executeFromWallet);
+
+            const isInputAssetStable = SupportedFeeTokens[chainId].includes(inputToken);
+            const isOutputAssetStable = SupportedFeeTokens[chainId].includes(outputToken);
+
+            let feeToken: Currency | undefined;
+            if (executeFromWallet && isInputAssetStable) feeToken = trade.inputAmount.currency;
+            if (executeFromWallet && isOutputAssetStable) feeToken = trade.outputAmount.currency;
+
+            if (executeFromWallet && feeToken) {
+                  let feeAmount = options.feeOptions?.gasCostInQuoteToken;
+                  if (feeToken.wrapped.address === inputToken) {
+                        feeAmount = options.feeOptions?.gasCostInBaseToken;
+                  }
+                  if (feeAmount) {
+                        planner.addExternalUserOperation(
+                              OperationType.TRANSFER,
+                              [signer.address, BigInt(feeAmount)],
+                              inputToken,
+                        );
+                  }
+            }
       }
 
-      private addMandatoryOperations = (planner: WalletOperationBuilder) => {
+      private addMandatoryOperations = (planner: WalletOperationBuilder, executeFromWallet: boolean) => {
             const { trade, options } = this;
             const { slippageTolerance } = options.underlyingTradeOptions;
-            const { account, smartWalletDetails, executeFromWallet, chainId } = options;
+            const { account, smartWalletDetails, chainId } = options;
 
             const inputToken = this.trade.inputAmount.currency.wrapped.address;
             const amountIn = SmartRouter.maximumAmountIn(trade, slippageTolerance, trade.inputAmount).quotient;
@@ -72,11 +90,11 @@ export class ClasicTrade implements Command {
                         inputToken,
                   );
             }
-            planner.addUserOperation(OperationType.APPROVE, [smartWalletDetails.address, BigInt(amountIn)], inputToken);
+            const swapRouterAddress = getUniversalRouterAddress(chainId);
+            planner.addUserOperation(OperationType.APPROVE, [swapRouterAddress, BigInt(amountIn)], inputToken);
 
             const urOptions = options.underlyingTradeOptions;
             const methodParameters = PancakeSwapUniversalRouter.swapERC20CallParameters(trade, urOptions);
-            const swapRouterAddress = getUniversalRouterAddress(chainId);
 
             planner.addUserOperationFromCall([
                   {

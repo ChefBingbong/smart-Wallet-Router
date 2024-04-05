@@ -1,14 +1,39 @@
 import { defaultAbiCoder } from "@ethersproject/abi";
 import type { BigNumber, Wallet } from "ethers";
 import type { UserOp } from "../api";
+import { Address } from "viem";
 
+export type DomainType = {
+      name: string;
+      version: string;
+      chainId: number;
+      verifyingContract: Address;
+};
+
+export type Types = {
+      name: string;
+      type: string;
+};
+
+export type ECDSAExecType = {
+      userOps: UserOp[];
+      nonce: number | BigNumber;
+      chainID: number;
+      sigChainID: number;
+};
+
+export type EIP712TypedData = {
+      domain: DomainType;
+      types: { UserOp: Types[]; ECDSAExec: Types[] };
+      values: ECDSAExecType;
+};
 export const signTypedTx = async (
       userOps: UserOp[],
       signer: Wallet,
       smartWalletAddress: string,
       nonce: number | BigNumber,
       chainID: number,
-      signatureChainID: number
+      signatureChainID: number,
 ) => {
       const domain = {
             name: "ECDSAWallet",
@@ -39,20 +64,17 @@ export const signTypedTx = async (
       };
 
       const signature = await signer._signTypedData(domain, types, value);
-      const signatureEncoded = defaultAbiCoder.encode(
-            ["uint256", "bytes"],
-            [signatureChainID, signature]
-      );
+      const signatureEncoded = defaultAbiCoder.encode(["uint256", "bytes"], [signatureChainID, signature]);
 
       return signatureEncoded;
 };
 
-export const typedMetaTx = async (
+export const typedMetaTx = (
       userOps: UserOp[],
       nonce: number | BigNumber,
       smartWalletAddress: string,
       chainId: number,
-) => {
+): { domain: DomainType; types: { UserOp: Types[]; ECDSAExec: Types[] }; values: ECDSAExecType } => {
       const domain = {
             name: "ECDSAWallet",
             version: "0.0.1",

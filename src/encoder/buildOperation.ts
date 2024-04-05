@@ -1,7 +1,7 @@
 import type { WalletOperationBuilder } from "./walletOperations";
 
 export enum RouterTradeType {
-      ClassicTrade = "ClassicTrade",
+      DefaultTrade = "DefaultTrade",
       CustomFeeCurrencyTrade = "CustomFeeCurrencyTrade",
 }
 

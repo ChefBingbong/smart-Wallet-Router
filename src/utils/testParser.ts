@@ -1,4 +1,11 @@
-import { PancakeSwapSmartWalletRouter } from "../smartWalletRouter2";
+import { SmartRouter, SmartRouterTrade } from "@pancakeswap/smart-router";
+import { PancakeSwapSmartWalletRouter, Routers, SmartWalletTradeOptions } from "../smartWalletRouter2";
+import { CurrencyAmount, TradeType } from "@pancakeswap/swap-sdk-core";
+import { BUSD_TESTNET, CAKE_TESTNET } from "@pancakeswap/tokens";
+import { getPublicClient } from "../provider/walletClient";
+import { getViemClients } from "../provider/client";
+import { WNATIVE } from "@pancakeswap/sdk";
+import { RouterTradeType } from "../encoder/buildOperation";
 
 const trade = {
       tradeType: 0,
@@ -157,6 +164,33 @@ const trade = {
       blockNumber: 39190064,
 };
 
+const options = {
+      recipient: "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
+      slippageTolerance: {
+            numerator: "50xxx",
+            denominator: "10000xxx",
+            isPercent: true,
+      },
+      deadlineOrPreviousBlockhash: "1712288654",
+};
+
+const USEROP = [
+      {
+            to: "0x8d008B313C1d6C7fE2982F62d32Da7507cF43551",
+            amount: 0n,
+            data: "0x23b872dd000000000000000000000000c39d95f6156b2ecb9977bcc75ca677a80e06c60d000000000000000000000000a7c46c163dd8625ba1458ed066ece7b26a045af500000000000000000000000000000000000000000000000000b1a2bc2ec50000",
+      },
+      {
+            to: "0x8d008B313C1d6C7fE2982F62d32Da7507cF43551",
+            amount: 0n,
+            data: "0x095ea7b30000000000000000000000009a082015c919ad0e47861e5db9a1c7070e81a2c700000000000000000000000000000000000000000000000000b1a2bc2ec50000",
+      },
+      // {
+      //   to: '0x9A082015c919AD0E47861e5Db9A1c7070E81A2C7',
+      //   amount: 0n,
+      //   data: '0x3593564c000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000660f738e00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000100000000000000000000000000c39d95f6156b2ecb9977bcc75ca677a80e06c60d00000000000000000000000000000000000000000000000000b1a2bc2ec5000000000000000000000000000000000000000000000000000000003a37897d893800000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b8d008b313c1d6c7fe2982f62d32da7507cf435510001f4ae13d989dac2f0debff460ac112a837c89baa7cd000000000000000000000000000000000000000000'
+      // }
+];
 const replacer = (key: any, value: any) => {
       if (typeof value === "bigint") {
             return `${value.toString()}xxx`;
@@ -165,6 +199,8 @@ const replacer = (key: any, value: any) => {
 };
 
 const jsonString = JSON.stringify(trade ?? { hey: "ss" }, replacer);
+const jsonString2 = JSON.stringify(options ?? { hey: "ss" }, replacer);
+
 // console.log(jsonString)
 
 const parsedObj = JSON.parse(jsonString, (key, value) => {
@@ -172,15 +208,62 @@ const parsedObj = JSON.parse(jsonString, (key, value) => {
             return BigInt(value.slice(0, -3)); // Extract the number part and convert it to BigInt
       }
       return value;
-});
+}) as SmartRouterTrade<TradeType>;
 
+const parsedObj2 = JSON.parse(jsonString2, (key, value) => {
+      if (typeof value === "string" && value.endsWith("xxx")) {
+            return BigInt(value.slice(0, -3)); // Extract the number part and convert it to BigInt
+      }
+      return value;
+});
 console.log(parsedObj);
+
 async function main() {
-      const r = await PancakeSwapSmartWalletRouter.estimateSmartWalletFees({
-            userOps: [],
-            trade: parsedObj as any,
+      const pools = await SmartRouter.getV3CandidatePools({
+            currencyA: CAKE_TESTNET,
+            currencyB: WNATIVE[97],
+            // subgraphProvider: ({ chainId }) => (chainId ? v3Clients[chainId] : undefined),
+            onChainProvider: getViemClients,
+            blockNumber: await getPublicClient({ chainId: 97 }).getBlockNumber(),
+      });
+      const poolProvider = SmartRouter.createStaticPoolProvider(pools);
+      const quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: getPublicClient });
+      const deferAmount = CurrencyAmount.fromRawAmount(CAKE_TESTNET, (50 * 10 ** 15).toString());
+
+      const res = await SmartRouter.getBestTrade(deferAmount, WNATIVE[97], TradeType.EXACT_INPUT, {
+            gasPriceWei: await getPublicClient({ chainId: 97 }).getGasPrice(),
+            // maxHops,
+            poolProvider,
+            // maxSplits,
+            quoteProvider,
+            // allowedPoolTypes: poolTypes,
+            // quoterOptimization,
+            // quoteCurrencyUsdPrice,
+            // nativeCurrencyUsdPrice,
+            // signal,
+      });
+      const smartWalletDetails = await PancakeSwapSmartWalletRouter.getUserSmartWalletDetails(
+            "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
+            97,
+      );
+
+      const feeOptions = await PancakeSwapSmartWalletRouter.estimateSmartWalletFees({
+            userOps: USEROP,
+            trade: res,
             chainId: 97,
       });
+      const ops: SmartWalletTradeOptions = {
+            router: Routers.UniversalRouter,
+            underlyingTradeOptions: parsedObj2,
+            requiresExternalApproval: true,
+            SmartWalletTradeType: RouterTradeType.CustomFeeCurrencyTrade,
+            smartWalletDetails,
+            account: "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
+            chainId: 97,
+            feeOptions,
+      };
+
+      const r = PancakeSwapSmartWalletRouter.buildSmartWalletTrade(res, ops) as any;
       console.log(r);
 }
 main();

@@ -2,13 +2,8 @@ import { config } from "dotenv";
 import cors from "cors";
 import express from "express";
 import { BigNumberish, ethers } from "ethers";
-import {
-      ECDSAWalletFactory,
-      ECDSAWalletFactory__factory,
-      ECDSAWallet__factory,
-      IWallet,
-} from "../typechain-types";
-import { Address } from "viem";
+import { ECDSAWalletFactory, ECDSAWalletFactory__factory, ECDSAWallet__factory, IWallet } from "../typechain-types";
+import { Address, Hex } from "viem";
 
 config();
 
@@ -19,33 +14,15 @@ app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 const providers = new Map<number, ethers.providers.Provider>([
-      [
-            1,
-            new ethers.providers.JsonRpcProvider(
-                  "https://mainnet.infura.io/v3/e110322e378a4f268172084e63ac8b8d"
-            ),
-      ],
-      [
-            5,
-            new ethers.providers.JsonRpcProvider(
-                  "https://goerli.infura.io/v3/e110322e378a4f268172084e63ac8b8d"
-            ),
-      ],
+      [1, new ethers.providers.JsonRpcProvider("https://mainnet.infura.io/v3/e110322e378a4f268172084e63ac8b8d")],
+      [5, new ethers.providers.JsonRpcProvider("https://goerli.infura.io/v3/e110322e378a4f268172084e63ac8b8d")],
       [3120, new ethers.providers.JsonRpcProvider("https://mainnet.catalog.fi/rpc")],
-      [
-            18414,
-            new ethers.providers.JsonRpcProvider("https://rpc.catalog.fi/testnet"),
-      ],
-      [
-            56,
-            new ethers.providers.JsonRpcProvider(
-                  "https://bsc-dataseed1.binance.org"
-            ),
-      ],
+      [18414, new ethers.providers.JsonRpcProvider("https://rpc.catalog.fi/testnet")],
+      [56, new ethers.providers.JsonRpcProvider("https://bsc-dataseed1.binance.org")],
       [
             80001,
             new ethers.providers.JsonRpcProvider(
-                  "https://polygon-mumbai.g.alchemy.com/v2/Jcsa7sP9t3l4NPGg2pg9FDUMvVXt4Im-"
+                  "https://polygon-mumbai.g.alchemy.com/v2/Jcsa7sP9t3l4NPGg2pg9FDUMvVXt4Im-",
             ),
       ],
 ]);
@@ -160,9 +137,9 @@ export interface SmartWallet {
 }
 
 export interface UserOp {
-      to: string;
+      to: Address;
       amount: BigNumberish;
-      data: ethers.utils.BytesLike | undefined;
+      data: Hex;
 }
 
 interface Transaction {
@@ -173,31 +150,21 @@ interface Transaction {
 
 function getProvider(chainID: number): ethers.providers.Provider {
       const provider = providers.get(chainID);
-      return provider
-            ? provider
-            : new ethers.providers.JsonRpcProvider("http://localhost:8545");
+      return provider ? provider : new ethers.providers.JsonRpcProvider("http://localhost:8545");
 }
 
 async function getFactory(chainID: number): Promise<ECDSAWalletFactory> {
       return await ECDSAWalletFactory__factory.connect(
             "0xd3c31047E4622EA0c804cdB11338D6e100D3bCF6" as string,
-            getSigner(chainID)
+            getSigner(chainID),
       );
 }
 
 async function getWallet(address: string, chainID: number): Promise<IWallet> {
-      return (await ECDSAWallet__factory.connect(
-            address,
-            getSigner(chainID)
-      )) as IWallet;
+      return (await ECDSAWallet__factory.connect(address, getSigner(chainID))) as IWallet;
 }
 
-async function getSmartWallet(
-      addr: string,
-      nonce: string,
-      chainID: number,
-      deploy?: boolean
-): Promise<SmartWallet> {
+async function getSmartWallet(addr: string, nonce: string, chainID: number, deploy?: boolean): Promise<SmartWallet> {
       const factory = await getFactory(chainID);
       console.log("hey");
       console.log(factory);
@@ -212,9 +179,7 @@ async function getSmartWallet(
             if (!deploy) {
                   return wallet;
             }
-            const tx = await factory
-                  .connect(signer)
-                  .createWallet(addr, { gasLimit: 200000 });
+            const tx = await factory.connect(signer).createWallet(addr, { gasLimit: 200000 });
             const reciept = await tx.wait(1);
             console.log(reciept);
       }
@@ -225,21 +190,16 @@ async function getSmartWallet(
 function getSigner(chainID: number): ethers.Signer {
       return new ethers.Wallet(
             "c5528b154423e65dc2ceb1cd21e108650e4a5c2815f7b3db3663b2bfc849d860",
-            getProvider(chainID)!
+            getProvider(chainID)!,
       );
 }
 
-async function getNonceMap(
-      address: string,
-      id: string
-): Promise<Map<string, BigNumberish>> {
+async function getNonceMap(address: string, id: string): Promise<Map<string, BigNumberish>> {
       let nonceMap = new Map<string, number>();
       providers.forEach(async (provider, chainId) => {
             let nonce: number = 0;
             if ((await provider.getCode(address)) !== "0x") {
-                  nonce = (
-                        await (await getWallet(address, chainId)).nonce()
-                  ).toNumber();
+                  nonce = (await (await getWallet(address, chainId)).nonce()).toNumber();
             }
             console.log(chainId, nonce);
             nonceMap = nonceMap.set(chainId.toString(), nonce);
@@ -270,17 +230,11 @@ app.get("/addresses/:address", async (req, res) => {
             console.log(smartWallet);
             res.status(200).send({
                   address: smartWallet.address,
-                  nonces: JSON.stringify(
-                        Object.fromEntries(await getNonceMap(signerAddress, id))
-                  ),
+                  nonces: JSON.stringify(Object.fromEntries(await getNonceMap(signerAddress, id))),
             });
             return;
       }
-      const smartWallet = await getSmartWallet(
-            signerAddress,
-            id,
-            parseInt(req.query.chainId.toString())
-      );
+      const smartWallet = await getSmartWallet(signerAddress, id, parseInt(req.query.chainId.toString()));
 
       const nonce = smartWallet.wallet ? await smartWallet.wallet.nonce() : 0;
       res.status(200).send({
@@ -307,11 +261,7 @@ app.post("/transactions/:address", async (req, res) => {
 
       const gasPrice = await wallet.wallet!.provider.getGasPrice();
       try {
-            const gas = await wallet.wallet!.estimateGas.exec(
-                  tx.userOps,
-                  tx.signature,
-                  { gasLimit: 200000 }
-            );
+            const gas = await wallet.wallet!.estimateGas.exec(tx.userOps, tx.signature, { gasLimit: 200000 });
             const txCost = gasPrice.mul(gas);
             const relayer = await getSigner(tx.chainID).getAddress();
             const isPayingRelayer = tx.userOps[0].to === relayer;
@@ -325,11 +275,7 @@ app.post("/transactions/:address", async (req, res) => {
             res.status(400).send({ error: parseContractError(err) });
             return;
       }
-      const execTx = await wallet.wallet!.populateTransaction.exec(
-            tx.userOps,
-            tx.signature,
-            { gasLimit: 200000 }
-      );
+      const execTx = await wallet.wallet!.populateTransaction.exec(tx.userOps, tx.signature, { gasLimit: 200000 });
       //for bl and other complicated trasbnsantions, return the promise and allow user
       //to process tx own their on instead of being lmitied by api.
       let reciept: any = "0x0";
