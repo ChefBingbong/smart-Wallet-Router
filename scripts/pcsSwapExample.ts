@@ -78,10 +78,10 @@ async function main(config: SmartWalletConfig) {
             outPutTokenAddress: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
             calls: swapCalls,
       });
-      const c = await swr.estimateFeesInInutToken();
-      return;
+      // const c = await swr.estimateFeesInInutToken();
+      // return;
       const s = await swr.getTypedTxMetaData();
-
+      return;
       const chainId = config.chainId;
       const provider = new ethers.providers.JsonRpcProvider(PUBLIC_NODES[chainId][0]);
 

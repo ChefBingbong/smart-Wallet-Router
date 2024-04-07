@@ -1,14 +1,16 @@
 import { defaultAbiCoder } from "@ethersproject/abi";
 import type { BigNumber, Wallet } from "ethers";
-import type { UserOp } from "../api";
+import { Address } from "viem";
+import { UserOp } from "../types/smartWallet";
+import { TypedSmartWalletData } from "../types/eip712";
 
 export const signTypedTx = async (
       userOps: UserOp[],
       signer: Wallet,
-      smartWalletAddress: string,
+      smartWalletAddress: Address,
       nonce: number | BigNumber,
       chainID: number,
-      signatureChainID: number
+      signatureChainID: number,
 ) => {
       const domain = {
             name: "ECDSAWallet",
@@ -39,20 +41,17 @@ export const signTypedTx = async (
       };
 
       const signature = await signer._signTypedData(domain, types, value);
-      const signatureEncoded = defaultAbiCoder.encode(
-            ["uint256", "bytes"],
-            [signatureChainID, signature]
-      );
+      const signatureEncoded = defaultAbiCoder.encode(["uint256", "bytes"], [signatureChainID, signature]);
 
       return signatureEncoded;
 };
 
-export const typedMetaTx = async (
+export const typedMetaTx = (
       userOps: UserOp[],
-      nonce: number | BigNumber,
-      smartWalletAddress: string,
+      nonce: bigint,
+      smartWalletAddress: Address,
       chainId: number,
-) => {
+): TypedSmartWalletData => {
       const domain = {
             name: "ECDSAWallet",
             version: "0.0.1",

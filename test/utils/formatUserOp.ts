@@ -1,18 +1,18 @@
-import { PopulatedTransaction } from "ethers"
-import { SwapCall } from "../../src/smartWalletRouter"
+import { SimulateContractReturnType } from "viem";
+import { SwapCall } from "../../src/smartWalletRouter";
 
-export const formatUserOp = (tx: PopulatedTransaction) => {
+export const formatUserOp = (tx: SimulateContractReturnType["request"]) => {
       return {
-            to: tx.to,
-            amount: '0',
-            data: tx.data,
-      }
-}
+            to: tx.account,
+            amount: "0",
+            data: tx.blobs,
+      };
+};
 
 export const formatUserOpSwapCall = (tx: SwapCall) => {
       return {
             to: tx.address,
             amount: tx.value,
             data: tx.calldata,
-      }
-}
+      };
+};

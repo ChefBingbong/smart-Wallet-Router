@@ -29,7 +29,7 @@ export const Deployments: Deployments = {
             ECDSAWalletFactory: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
             SmartWalletFactory: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
             Depositor: "0x",
-            weth: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            // weth: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
       },
       [ChainId.ETHEREUM]: {
             ECDSAWalletFactory: "0x",
@@ -47,8 +47,8 @@ export const Deployments: Deployments = {
             Depositor: "0x",
       },
       [ChainId.BSC_TESTNET]: {
-            ECDSAWalletFactory: "0xe4825036815509CaA36bC4A2a73299Dd68AF49a6",
-            SmartWalletFactory: "0xeDc90cd080e0b3ADCd9Dd922DC67fC1559268D08",
+            ECDSAWalletFactory: "0x99fF73b9a62965E0A27f49C5Fe37E5F17A78a560",
+            SmartWalletFactory: "0xA0BAC90193566cB5158aB74e067997B9f28e17AD",
             Depositor: "0x",
       },
       [ChainId.ZKSYNC_TESTNET]: {
