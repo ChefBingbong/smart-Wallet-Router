@@ -9,12 +9,14 @@ const defaultAccounts = ["22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07de
 const config: HardhatUserConfig = {
       networks: {
             hardhat: {
-                  forking: {
-                        enabled: true,
-                        url: "https://eth.llamarpc.com",
-                        blockNumber: 19595025,
-                  },
-                  chainId: 1,
+                  // forking: {
+                  //       enabled: true,
+                  //       url: "https://eth.llamarpc.com",
+                  //       blockNumber: 19595025,
+                  // },
+                  gas: 3000000,
+                  // url: "http://127.0.0.1:8545",
+                  chainId: 31337,
             },
             catalogMainnet: {
                   url: "https://rpc.catalog.fi/testnet",
@@ -126,6 +128,7 @@ const config: HardhatUserConfig = {
       solidity: {
             version: "0.8.17",
             settings: {
+                  viaIR: true,
                   optimizer: {
                         enabled: true,
                         runs: 1000,

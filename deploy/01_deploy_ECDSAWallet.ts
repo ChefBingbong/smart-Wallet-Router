@@ -1,6 +1,7 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import type { DeployFunction } from "hardhat-deploy/types";
 import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
+import { getPermit2Address } from "@pancakeswap/permit2-sdk";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       const { deploy, get } = hre.deployments;
@@ -12,7 +13,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
       const res = await deploy("ECDSAWalletFactory", {
             from: deployer,
-            args: [smartWallet.address, PERMIT2_ADDRESS],
+            args: [smartWallet.address, getPermit2Address(hre.network.config.chainId)],
             log: true,
       });
       // await res.d

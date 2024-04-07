@@ -6,8 +6,8 @@ import "./SmartWalletFactory.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IPermit2} from "./interfaces/IPermit2.sol";
-import {ISignatureTransfer} from "./interfaces/ISignatureTransfer.sol";
+import {IPermit2} from "./permit2/interfaces/IPermit2.sol";
+import {ISignatureTransfer} from "./permit2/interfaces/ISignatureTransfer.sol";
 
 contract ECDSAWalletFactory is Ownable {
       SmartWalletFactory factory;
