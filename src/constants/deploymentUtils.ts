@@ -47,8 +47,8 @@ export const Deployments: Deployments = {
             Depositor: "0x",
       },
       [ChainId.BSC_TESTNET]: {
-            ECDSAWalletFactory: "0xe4825036815509CaA36bC4A2a73299Dd68AF49a6",
-            SmartWalletFactory: "0xeDc90cd080e0b3ADCd9Dd922DC67fC1559268D08",
+            ECDSAWalletFactory: "0xcc3a1FC6F921b943522A94C1ac795Ae5E4C7b91E",
+            SmartWalletFactory: "0x29cf2b0d52B8Eb52Ce756df51623C0Ce34D0bF17",
             Depositor: "0x",
       },
       [ChainId.ZKSYNC_TESTNET]: {

@@ -6,6 +6,9 @@ import { Command, RouterTradeType } from "../encoder/buildOperation";
 import { OperationType, WalletOperationBuilder } from "../encoder/walletOperations";
 import { signer } from "../provider/walletClient";
 import { SmartWalletTradeOptions } from "../types/smartWallet";
+import invariant from "tiny-invariant";
+import { encodeInputTokenOptions } from "../encoder/permit2Operations";
+import { Address } from "viem";
 
 export class ClasicTrade implements Command {
       readonly tradeType: RouterTradeType;
@@ -23,7 +26,7 @@ export class ClasicTrade implements Command {
 
       encode(planner: WalletOperationBuilder): void {
             const { trade, options } = this;
-            const { chainId, smartWalletDetails } = options;
+            const { chainId, smartWalletDetails, walletPermitOtions } = options;
             const { slippageTolerance } = options.underlyingTradeOptions;
 
             const executeFromWallet = this.tradeType === RouterTradeType.CustomFeeCurrencyTrade;
@@ -35,13 +38,36 @@ export class ClasicTrade implements Command {
             const outputToken = trade.outputAmount.currency.wrapped.address;
             const amountIn = SmartRouter.maximumAmountIn(trade, slippageTolerance, trade.inputAmount).quotient;
 
-            if (this.options.requiresExternalApproval) {
+            if (!!walletPermitOtions?.approval && !!walletPermitOtions?.permit2Permit)
+                  invariant(
+                        walletPermitOtions?.approval.token === walletPermitOtions?.permit2Permit.details.token,
+                        `inconsistent token`,
+                  );
+            if (!!walletPermitOtions?.approval && !!walletPermitOtions?.permit2TransferFrom)
+                  invariant(
+                        walletPermitOtions?.approval.token === walletPermitOtions?.permit2TransferFrom.token,
+                        `inconsistent token`,
+                  );
+            if (!!walletPermitOtions?.permit2TransferFrom && !!walletPermitOtions?.permit2Permit)
+                  invariant(
+                        walletPermitOtions?.permit2TransferFrom.token ===
+                              walletPermitOtions?.permit2Permit.details.token,
+                        `inconsistent token`,
+                  );
+
+            const swapRouterAddress = getUniversalRouterAddress(chainId);
+            if (walletPermitOtions?.permit2TransferFrom) {
                   planner.addExternalUserOperation(
-                        OperationType.APPROVE,
-                        [smartWalletDetails.address, BigInt(amountIn)],
-                        inputToken,
+                        OperationType.PERMIT2_TRANSFER_FROM,
+                        [
+                              walletPermitOtions?.permit2TransferFrom.token as Address,
+                              smartWalletDetails.address as Address,
+                              amountIn,
+                        ],
+                        swapRouterAddress,
                   );
             }
+
             this.addMandatoryOperations(planner, executeFromWallet);
 
             const isInputAssetStable = SupportedFeeTokens[chainId].includes(inputToken);

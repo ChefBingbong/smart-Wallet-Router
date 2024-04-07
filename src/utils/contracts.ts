@@ -1,7 +1,7 @@
 import { Address, erc20Abi, getContract } from "viem";
 import { Deployments } from "../constants/deploymentUtils";
 import { ChainId } from "@pancakeswap/chains";
-import { getPublicClient } from "../provider/walletClient";
+import { getPublicClient, getUserWalletClient, getWalletClient } from "../provider/walletClient";
 import { smartWalletFactoryAbi as factoryAbi } from "../../abis/SmartWalletFactoryAbi";
 import { smartWalletAbi as walletAbi } from "../../abis/SmartWalletAbi";
 
@@ -18,5 +18,12 @@ export const getSmartWallet = (chainId: ChainId, address: Address) => {
 
 export const getErc20Contract = (chainId: ChainId, address: Address) => {
       const client = getPublicClient({ chainId });
-      return getContract({ address, client, abi: erc20Abi });
+      const walletClient = getWalletClient({ chainId });
+      return getContract({ address, client: walletClient, abi: erc20Abi });
+};
+
+export const getUserErc20Contract = (chainId: ChainId, address: Address) => {
+      const client = getPublicClient({ chainId });
+      const walletClient = getUserWalletClient({ chainId });
+      return getContract({ address, client: walletClient, abi: erc20Abi });
 };

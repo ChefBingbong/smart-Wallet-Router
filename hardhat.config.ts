@@ -4,15 +4,17 @@ import "hardhat-deploy";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const defaultAccounts = [
-      "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
-];
+const defaultAccounts = ["22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4"];
 
 const config: HardhatUserConfig = {
       networks: {
-            local: {
-                  url: " http://127.0.0.1:8545/",
-                  accounts: defaultAccounts,
+            hardhat: {
+                  forking: {
+                        enabled: true,
+                        url: "https://eth.llamarpc.com",
+                        blockNumber: 19595025,
+                  },
+                  chainId: 1,
             },
             catalogMainnet: {
                   url: "https://rpc.catalog.fi/testnet",

@@ -36,6 +36,8 @@ import { getErc20Contract, getSmartWallet, getSmartWalletFactory } from "./utils
 import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
 import { typedMetaTx } from "./utils/typedMetaTx";
 import { getNativeWrappedToken, getUsdGasToken } from "./utils/estimateGas";
+import { encodePermit } from "./encoder/permit2Operations";
+import invariant from "tiny-invariant";
 
 // biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 export abstract class PancakeSwapSmartWalletRouter {
@@ -60,6 +62,15 @@ export abstract class PancakeSwapSmartWalletRouter {
             const tradeCommand = new ClasicTrade(trade, options);
             tradeCommand.encode(planner);
 
+            const routerPermit = options.routerPermitOtions;
+            const inputCurrency = tradeCommand.trade.inputAmount.currency;
+            invariant(!(inputCurrency.isNative && !!routerPermit?.permit2Permit), "NATIVE_INPUT_PERMIT");
+
+            if (routerPermit?.permit2Permit && typeof routerPermit?.permit2Permit === "object") {
+                  const routerAddress = getUniversalRouterAddress(options.chainId);
+                  encodePermit(planner, routerPermit.permit2Permit, routerAddress);
+            }
+
             return PancakeSwapSmartWalletRouter.encodePlan(planner, {
                   smartWalletDetails: options.smartWalletDetails,
                   chainId: options.chainId,
@@ -73,6 +84,13 @@ export abstract class PancakeSwapSmartWalletRouter {
             const planner = new WalletOperationBuilder();
             const tradeCommand = new ClasicTrade(trade, options);
             tradeCommand.encode(planner);
+
+            const inputCurrency = tradeCommand.trade.inputAmount.currency;
+            invariant(!(inputCurrency.isNative && !!options.permitSignature), "NATIVE_INPUT_PERMIT");
+
+            if (options.permitSignature && typeof options.permitSignature === "object") {
+                  encodePermit(planner, options.permitSignature);
+            }
 
             return PancakeSwapSmartWalletRouter.encodePlan(planner, {
                   smartWalletDetails: options.smartWalletDetails,
@@ -222,6 +240,8 @@ export abstract class PancakeSwapSmartWalletRouter {
             if (nativePriceInUsd) {
                   gasCostInUSD = nativePriceInUsd.quote(totalGasCostNativeCurrency);
             }
+
+            console.log(gasCostInBaseToken, gasCostInQuoteToken, gasCostInUSD, tradeGasEstimation);
             return {
                   gasEstimate: tradeGasEstimation,
                   gasCostInQuoteToken: Number(gasCostInQuoteToken.quotient) / 10 ** 18,
@@ -240,7 +260,7 @@ export abstract class PancakeSwapSmartWalletRouter {
 
             const code = await publicClient.getBytecode({ address });
             const smartWallet = getSmartWallet(chainId, address);
-            const nonce = code === "0x" ? await smartWallet.read.nonce() : BigInt(0);
+            const nonce = await smartWallet.read.nonce();
             return { address, nonce };
       }
 

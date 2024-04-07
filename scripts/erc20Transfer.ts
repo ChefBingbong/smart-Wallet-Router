@@ -1,4 +1,4 @@
-import type { ChainId } from "@pancakeswap/chains";
+import { ChainId } from "@pancakeswap/chains";
 import chalk from "chalk";
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
@@ -14,11 +14,7 @@ import { sleep } from "../src/utils/sleep";
 import { signTypedTx } from "../src/utils/typedMetaTx";
 import { parseContractError } from "../test/utils/error";
 import type { Transaction } from "../test/utils/sign";
-import {
-      ECDSAWalletFactory__factory,
-      ECDSAWallet__factory,
-      ERC20__factory,
-} from "../typechain-types";
+import { ECDSAWalletFactory__factory, ECDSAWallet__factory, ERC20__factory } from "../typechain-types";
 import { slice } from "lodash";
 import { formatUnits } from "ethers/lib/utils";
 
@@ -32,18 +28,12 @@ export type SmartWalletConfig = {
 };
 
 async function main(config: SmartWalletConfig) {
-      console.log(
-            chalk.yellow(
-                  `Starting Smart Wallet Native Transfer: ${config.chainId}\n`
-            )
-      );
+      console.log(chalk.yellow(`Starting Smart Wallet Native Transfer: ${config.chainId}\n`));
       const relayerFormatted = formatUnits(config.relayerFee, "gwei");
       const amountFormatted = config.amount;
 
       const chainId = config.chainId;
-      const provider = new ethers.providers.JsonRpcProvider(
-            PUBLIC_NODES[chainId][0]
-      );
+      const provider = new ethers.providers.JsonRpcProvider(PUBLIC_NODES[chainId][0]);
 
       const deployerPk = config?.smartWalletSigner;
       const userPk = config?.userWalletSigner;
@@ -52,18 +42,12 @@ async function main(config: SmartWalletConfig) {
 
       const smartWalletFactory = ECDSAWalletFactory__factory.connect(
             Deployments[chainId].ECDSAWalletFactory,
-            smartWalletSigner
+            smartWalletSigner,
       );
 
-      const userSmartWalletAddress = await smartWalletFactory.walletAddress(
-            userWalletSigner.address,
-            1
-      );
+      const userSmartWalletAddress = await smartWalletFactory.walletAddress(userWalletSigner.address, 0);
 
-      const ERC20Asset = ERC20__factory.connect(
-            "0x80a14816eCfC8454962dad80d882E8e8fFCb1819",
-            smartWalletSigner
-      );
+      const ERC20Asset = ERC20__factory.connect("0x80a14816eCfC8454962dad80d882E8e8fFCb1819", smartWalletSigner);
 
       const userBalance = await provider.getBalance(userWalletSigner.address);
       const userSWBalance = await provider.getBalance(smartWalletSigner.address);
@@ -82,7 +66,7 @@ async function main(config: SmartWalletConfig) {
             isCreationTx = true;
             console.log(
                   // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
-                  chalk.yellow(`Wallet Not deployed yet. initiating creation Tx.`)
+                  chalk.yellow(`Wallet Not deployed yet. initiating creation Tx.`),
             );
             await sleep(2000);
 
@@ -93,27 +77,22 @@ async function main(config: SmartWalletConfig) {
                   console.log(
                         chalk.red(
                               `The relayer needs to be funded on wallet creation to 
-                              fund the deployement cost. please add relayer fee param!`
-                        )
+                              fund the deployement cost. please add relayer fee param!`,
+                        ),
                   );
                   return;
             }
-            const userWalletCreationTx = await smartWalletFactory.createWallet(
-                  userWalletSigner.address
-            );
+            const userWalletCreationTx = await smartWalletFactory.createWallet(userWalletSigner.address);
             const receipt = await userWalletCreationTx.wait(2);
             console.log(
                   chalk.yellow(
                         `Successfully deployed user Smart Wallet at tx: ${receipt.transactionHash},
-                        Now Proceeding to execute Transfer Tx.`
-                  )
+                        Now Proceeding to execute Transfer Tx.`,
+                  ),
             );
       }
 
-      const userSmartWallet = ECDSAWallet__factory.connect(
-            userSmartWalletAddress,
-            provider
-      );
+      const userSmartWallet = ECDSAWallet__factory.connect(userSmartWalletAddress, provider);
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
       // const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
       //       "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D"
@@ -138,9 +117,10 @@ async function main(config: SmartWalletConfig) {
       //       );
       // }
 
-      const populatedTransferTx = await ERC20Asset.connect(
-            smartWalletSigner
-      ).populateTransaction.transfer(config.recipientAddress, config.amount);
+      const populatedTransferTx = await ERC20Asset.connect(smartWalletSigner).populateTransaction.transfer(
+            config.recipientAddress,
+            config.amount,
+      );
 
       const relayerTx: UserOp = {
             to: smartWalletSigner.address,
@@ -153,7 +133,7 @@ async function main(config: SmartWalletConfig) {
             data: populatedTransferTx.data,
       };
 
-      const userOps = isCreationTx ? [relayerTx, transferTx] : [transferTx];
+      const userOps = isCreationTx ? [transferTx] : [transferTx];
 
       const signature = await signTypedTx(
             userOps,
@@ -161,7 +141,7 @@ async function main(config: SmartWalletConfig) {
             userSmartWalletAddress,
             currentWalletTxNonce,
             chainId,
-            chainId
+            chainId,
       );
 
       const transaction: Transaction = {
@@ -173,18 +153,16 @@ async function main(config: SmartWalletConfig) {
       if (isCreationTx && config.relayerFee) {
             try {
                   const gasPrice = await userSmartWallet.provider.getGasPrice();
-                  const gas = await userSmartWallet.estimateGas.exec(
-                        transaction.userOps,
-                        transaction.signature,
-                        { gasLimit: 200000 }
-                  );
+                  const gas = await userSmartWallet.estimateGas.exec(transaction.userOps, transaction.signature, {
+                        gasLimit: 200000,
+                  });
 
                   const txCost = gasPrice.mul(gas);
                   if (txCost.gt(transaction.userOps[0].amount)) {
                         console.log(
                               chalk.red(`
                               Insufficient fee payment for Smart wallet, gas
-                              cost is greater than fee`)
+                              cost is greater than fee`),
                         );
                         return;
                   }
@@ -195,11 +173,9 @@ async function main(config: SmartWalletConfig) {
       }
       const metaExecTxCallData = await userSmartWallet
             .connect(smartWalletSigner)
-            .populateTransaction.exec(userOps, signature, { gasLimit: 2000000 });
+            .populateTransaction.exec(userOps, signature);
 
-      const smartWalletTx = await smartWalletSigner.sendTransaction(
-            metaExecTxCallData
-      );
+      const smartWalletTx = await smartWalletSigner.sendTransaction(metaExecTxCallData);
       const txReciept = await smartWalletTx.wait(1);
 
       console.log(chalk.green(`transfer successful}\n`, txReciept));
@@ -207,23 +183,17 @@ async function main(config: SmartWalletConfig) {
       await sleep(1500);
 
       const userBalanceAfter = await provider.getBalance(userWalletSigner.address);
-      const userSWBalanceAfter = await provider.getBalance(
-            smartWalletSigner.address
-      );
-      const recipientBalanceAfter = await provider.getBalance(
-            config.recipientAddress
-      );
+      const userSWBalanceAfter = await provider.getBalance(smartWalletSigner.address);
+      const recipientBalanceAfter = await provider.getBalance(config.recipientAddress);
       console.log(chalk.yellow(`User bal after: ${userBalanceAfter}`));
       console.log(chalk.yellow(`Smart Wallet bal after: ${userSWBalanceAfter}`));
       console.log(chalk.yellow(`Recipient bal after: ${recipientBalanceAfter}`));
 }
 
 const customConfig: SmartWalletConfig = {
-      chainId: ExtendedChainId.POLYGON_TESTNET,
-      smartWalletSigner:
-            "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
-      userWalletSigner:
-            "225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a",
+      chainId: ChainId.BSC_TESTNET,
+      smartWalletSigner: "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
+      userWalletSigner: "225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a",
       recipientAddress: "0x356c5fA625F89481a76d9f7Af4eD866CD8c6CB4B",
       amount: 100,
       relayerFee: 0,

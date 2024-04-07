@@ -15,7 +15,45 @@ export enum OperationType {
       TRANSFER = "TRANSFER",
       TRANSFER_FROM = "TRANSFER_FROM",
       APPROVE = "APPROVE",
+
+      PERMIT2_PERMIT = "PERMIT2_PERMIT",
+      PERMIT2_PERMIT_BATCH = "PERMIT2_PERMIT_BATCH",
+      PERMIT2_TRANSFER_FROM = "PERMIT2_TRANSFER_FROM",
+      PERMIT2_TRANSFER_FROM_BATCH = "PERMIT2_TRANSFER_FROM_BATCH",
 }
+
+const ABI_STRUCT_PERMIT_DETAILS = `
+struct PermitDetails {
+  address token;
+  uint160 amount;
+  uint48 expiration;
+  uint48 nonce;
+}`.replaceAll("\n", "");
+
+const ABI_STRUCT_PERMIT_SINGLE = `
+struct PermitSingle {
+  PermitDetails details;
+  address spender;
+  uint256 sigDeadline;
+}
+`.replaceAll("\n", "");
+
+const ABI_STRUCT_PERMIT_BATCH = `
+struct PermitBatch {
+  PermitSingle[] details;
+  address spender;
+  uint256 sigDeadline;
+}
+`.replaceAll("\n", "");
+
+const ABI_STRUCT_ALLOWANCE_TRANSFER_DETAILS = `
+struct AllowanceTransferDetails {
+  address from;
+  address to;
+  uint160 amount;
+  address token;
+}
+`.replaceAll("\n", "");
 
 export const ABI_PARAMETER = {
       // samrt wallet ops
@@ -29,6 +67,25 @@ export const ABI_PARAMETER = {
       [OperationType.TRANSFER]: parseAbiItem("function transfer(address to, uint256 amount)"),
       [OperationType.TRANSFER_FROM]: parseAbiItem("function transferFrom(address from, address to, uint256 amount)"),
       [OperationType.APPROVE]: parseAbiItem("function approve(address spender, uint256 amount)"),
+
+      [OperationType.PERMIT2_PERMIT]: parseAbiItem([
+            "function permit2Permit(PermitSingle permitSingle, bytes data)",
+            ABI_STRUCT_PERMIT_SINGLE,
+            ABI_STRUCT_PERMIT_DETAILS,
+      ]),
+      [OperationType.PERMIT2_PERMIT_BATCH]: parseAbiItem([
+            "function permit2PermitBatch(PermitBatch permitBatch, bytes data)",
+            ABI_STRUCT_PERMIT_BATCH,
+            ABI_STRUCT_PERMIT_SINGLE,
+            ABI_STRUCT_PERMIT_DETAILS,
+      ]),
+      [OperationType.PERMIT2_TRANSFER_FROM]: parseAbiItem(
+            "function permit2TransferFrom(address token, address recipient, uint160 amount)",
+      ),
+      [OperationType.PERMIT2_TRANSFER_FROM_BATCH]: parseAbiItem([
+            "function permit2PermitTransferFromBatch(AllowanceTransferDetails[] batchDetails)",
+            ABI_STRUCT_ALLOWANCE_TRANSFER_DETAILS,
+      ]),
 };
 
 export class WalletOperationBuilder {

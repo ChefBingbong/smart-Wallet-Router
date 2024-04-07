@@ -6,12 +6,15 @@ import { SmartRouterTrade } from "@pancakeswap/smart-router";
 import { TradeType } from "@pancakeswap/swap-sdk-core";
 import { RouterTradeType } from "../encoder/buildOperation";
 import { MethodParameters } from "@pancakeswap/v3-sdk";
+import { SmartWalletPermitOptions, UniversalRouterPermitOptions } from "./permit2";
 
 export interface BaseTradeOptions<TOps> {
       account: Address;
       chainId: ChainId;
       router: Routers;
       underlyingTradeOptions: TOps;
+      routerPermitOtions?: UniversalRouterPermitOptions;
+      walletPermitOtions?: SmartWalletPermitOptions;
 }
 
 export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
