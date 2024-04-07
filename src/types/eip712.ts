@@ -1,5 +1,5 @@
-import { Address } from "viem";
-import { UserOp } from "./smartWallet";
+import type { Address } from "viem";
+import type { UserOp } from "./smartWallet";
 
 export type DomainType = {
       name: string;

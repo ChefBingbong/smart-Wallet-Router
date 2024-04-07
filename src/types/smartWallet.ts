@@ -1,20 +1,18 @@
-import { ChainId } from "@pancakeswap/chains";
-import { PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
-import { Address, Hex } from "viem";
-import { Routers } from "../encoder/buildOperation";
-import { SmartRouterTrade } from "@pancakeswap/smart-router";
-import { TradeType } from "@pancakeswap/swap-sdk-core";
-import { RouterTradeType } from "../encoder/buildOperation";
-import { MethodParameters } from "@pancakeswap/v3-sdk";
-import { SmartWalletPermitOptions, UniversalRouterPermitOptions } from "./permit2";
+import type { ChainId } from "@pancakeswap/chains";
+import type { SmartRouterTrade } from "@pancakeswap/smart-router";
+import type { TradeType } from "@pancakeswap/swap-sdk-core";
+import type { MethodParameters } from "@pancakeswap/v3-sdk";
+import type { Address, GetContractReturnType, Hex } from "viem";
+import type { RouterTradeType, Routers } from "../encoder/buildOperation";
+import type { PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
+import { smartWalletAbi as walletAbi } from "../../abis/SmartWalletAbi";
+import { SmartWalletPermitOptions } from "./permit2";
 
 export interface BaseTradeOptions<TOps> {
       account: Address;
       chainId: ChainId;
       router: Routers;
       underlyingTradeOptions: TOps;
-      routerPermitOtions?: UniversalRouterPermitOptions;
-      walletPermitOtions?: SmartWalletPermitOptions;
 }
 
 export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
@@ -22,11 +20,11 @@ export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
 }
 
 export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOptions> {
-      requiresExternalApproval: boolean;
+      hasApprovedPermit2: boolean;
+      walletPermitOptions?: SmartWalletPermitOptions;
       smartWalletDetails: { address: Address; nonce: bigint };
       SmartWalletTradeType: RouterTradeType;
       router: Routers;
-      feeOptions?: FeeResponse;
 }
 
 export type UserOp = {
@@ -38,7 +36,8 @@ export type UserOp = {
 export type SwapCall = MethodParameters & { address: Address };
 
 export type ExecuteTradeCallback = {
-      signCallback: (args?: any) => Promise<Address>;
+      tradeType: RouterTradeType;
+      signature: Hex;
       walletOperations: UserOp[];
       account: Address;
       chainId: ChainId;
@@ -52,4 +51,4 @@ export type FeeResponse = {
 };
 
 export type SmartWalletGasParams = { userOps: UserOp[]; trade: SmartRouterTrade<TradeType>; chainId: ChainId };
-export type SmartWalletDetails = { address: Address; nonce: bigint };
+export type SmartWalletDetails = { address: Address; nonce: bigint; wallet: GetContractReturnType<typeof walletAbi> };

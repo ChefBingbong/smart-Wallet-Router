@@ -1,13 +1,14 @@
 import type { WalletOperationBuilder } from "./walletOperations";
 
 export enum RouterTradeType {
-      DefaultTrade = "DefaultTrade",
-      CustomFeeCurrencyTrade = "CustomFeeCurrencyTrade",
+      UniversalRouterTrade = "UniversalRouter",
+      ClassicTrade = "SmartRouter",
+      SmartWalletTrade = "DefaultTrade",
 }
 
 export enum Routers {
       UniversalRouter = "UniversalRouter",
-      SmartRouter = "SmartRouter",
+      SmartOrderRouter = "SmartRouter",
 }
 
 // interface for entities that can be encoded as a Universal Router command

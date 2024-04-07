@@ -1,50 +1,48 @@
-import { ChainId } from "@pancakeswap/chains";
+/* eslint-disable lines-between-class-members */
+import type { ChainId } from "@pancakeswap/chains";
 import { getTokenPrices } from "@pancakeswap/price-api-sdk";
-import { Currency, CurrencyAmount, Token, TradeType, WNATIVE } from "@pancakeswap/sdk";
-import { SmartRouterTrade, SwapOptions, SwapRouter } from "@pancakeswap/smart-router";
-import {
-      PancakeSwapOptions,
-      PancakeSwapUniversalRouter as UniversalRouter,
-      getUniversalRouterAddress,
-} from "@pancakeswap/universal-router-sdk";
-import {
-      Address,
-      BaseError,
-      ContractFunctionRevertedError,
-      Hex,
-      PrepareTransactionRequestReturnType,
-      encodePacked,
-      toFunctionSelector,
-} from "viem";
+import { CurrencyAmount, type Currency, type TradeType } from "@pancakeswap/sdk";
+import { SwapRouter, type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
+import { BaseError } from "abitype";
+import { Address, PublicClient, formatTransactionRequest, type Hex } from "viem";
 import { bscTestnet } from "viem/chains";
-import { smartWalletAbi } from "../abis/SmartWalletAbi";
-import { UserOp } from "../test/utils/sign";
+import { getContractError, getTransactionError, parseAccount } from "viem/utils";
+import { getUniversalRouterAddress } from "@pancakeswap/universal-router-sdk";
 import { Routers } from "./encoder/buildOperation";
-import { ABI_PARAMETER, OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
-import { getTokenPriceByNumber } from "./utils/estimateGas";
+import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
+import { PancakeSwapOptions, PancakeSwapUniversalRouter as UniversalRouter } from "@pancakeswap/universal-router-sdk";
+import { getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient, signer } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
-import {
-      ClassicTradeOptions,
-      ExecuteTradeCallback,
-      FeeResponse,
-      SmartWalletDetails,
-      SmartWalletGasParams,
-      SmartWalletTradeOptions,
-} from "./types/smartWallet";
-import { getErc20Contract, getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
-import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
+import type { ClassicTradeOptions, SmartWalletGasParams, SmartWalletTradeOptions, UserOp } from "./types/smartWallet";
+import { getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
+import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
+import { permit2TpedData } from "./permit/permit2TypedData";
 import { typedMetaTx } from "./utils/typedMetaTx";
-import { getNativeWrappedToken, getUsdGasToken } from "./utils/estimateGas";
-import { encodePermit } from "./encoder/permit2Operations";
-import invariant from "tiny-invariant";
+import { erc20Abi as ERC20ABI } from "viem";
+import { RouterCofig } from "./types/eip712";
+import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
+import { AccountNotFoundError } from "./utils/error";
 
 // biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
-export abstract class PancakeSwapSmartWalletRouter {
+export abstract class SmartWalletRouter {
+      public static account: Address;
+      public static smartWallet: Address;
+      public static chainId: ChainId;
+      public static isInitialized = false;
+      public static tradeConfig = {} as Partial<ClassicTradeOptions<any>> & SmartRouterTrade<TradeType>;
+
+      public static updateConfig(config: RouterCofig) {
+            this.account = config.account;
+            this.smartWallet = config.smartWallet;
+            this.chainId = config.chainId;
+      }
+
       public static buildClassicTrade<UTradeOps extends SwapOptions & PancakeSwapOptions>(
             trade: SmartRouterTrade<TradeType>,
             options: ClassicTradeOptions<UTradeOps>,
       ) {
+            this.tradeConfig = { ...options, trade };
             const routeOptions = options.underlyingTradeOptions;
             if (options.router === Routers.UniversalRouter) {
                   const { value, calldata } = UniversalRouter.swapERC20CallParameters(trade, routeOptions);
@@ -58,125 +56,83 @@ export abstract class PancakeSwapSmartWalletRouter {
       }
 
       public static buildSmartWalletTrade(trade: SmartRouterTrade<TradeType>, options: SmartWalletTradeOptions) {
+            this.tradeConfig = { ...options, trade };
+
             const planner = new WalletOperationBuilder();
             const tradeCommand = new ClasicTrade(trade, options);
             tradeCommand.encode(planner);
 
-            const routerPermit = options.routerPermitOtions;
-            const inputCurrency = tradeCommand.trade.inputAmount.currency;
-            invariant(!(inputCurrency.isNative && !!routerPermit?.permit2Permit), "NATIVE_INPUT_PERMIT");
-
-            if (routerPermit?.permit2Permit && typeof routerPermit?.permit2Permit === "object") {
-                  const routerAddress = getUniversalRouterAddress(options.chainId);
-                  encodePermit(planner, routerPermit.permit2Permit, routerAddress);
-            }
-
-            return PancakeSwapSmartWalletRouter.encodePlan(planner, {
-                  smartWalletDetails: options.smartWalletDetails,
-                  chainId: options.chainId,
+            return SmartWalletRouter.encodePlan(planner, {
+                  ...options,
+                  token: (this.tradeConfig.inputAmount.currency as any).address,
+                  amount: this.tradeConfig.inputAmount.quotient,
             });
       }
 
-      public static buildSmartWalletTradeWithCustomGasToken(
-            trade: SmartRouterTrade<TradeType>,
-            options: SmartWalletTradeOptions,
-      ) {
-            const planner = new WalletOperationBuilder();
-            const tradeCommand = new ClasicTrade(trade, options);
-            tradeCommand.encode(planner);
-
-            const inputCurrency = tradeCommand.trade.inputAmount.currency;
-            invariant(!(inputCurrency.isNative && !!options.permitSignature), "NATIVE_INPUT_PERMIT");
-
-            if (options.permitSignature && typeof options.permitSignature === "object") {
-                  encodePermit(planner, options.permitSignature);
-            }
-
-            return PancakeSwapSmartWalletRouter.encodePlan(planner, {
-                  smartWalletDetails: options.smartWalletDetails,
-                  chainId: options.chainId,
-            });
-      }
-
-      private static async executeSmartWalletTrade({
-            signCallback,
-            walletOperations,
-            account,
-            chainId,
-      }: ExecuteTradeCallback): Promise<{ populatedTrade?: PrepareTransactionRequestReturnType; hash?: Hex }> {
-            const callData = walletOperations[0].data?.slice(0, 8);
-            const transferSelector = toFunctionSelector(ABI_PARAMETER[OperationType.TRANSFER_FROM]);
-            const isUsingRelayer = Boolean(callData === transferSelector);
-
-            if (isUsingRelayer) {
-                  const asset = getErc20Contract(chainId, walletOperations[0].to);
-                  const { address } = await this.getUserSmartWalletDetails(account, chainId);
-                  const allowance = await asset.read.allowance([account, address]);
-                  if (allowance <= BigInt(0)) throw new Error("need to appove smart wallet first.");
-            }
-            const signature = await signCallback();
-            const signatureEncoded = encodePacked(["uint256", "bytes"], [BigInt(chainId), signature]);
-
-            const userSmartWallet = await this.getUserSmartWalletDetails(account, chainId);
-
-            const publicClient = getPublicClient({ chainId });
-            const walletClient = getWalletClient({ chainId });
-
-            const sim = await publicClient
-                  .simulateContract({
-                        address: userSmartWallet.address,
-                        abi: smartWalletAbi,
-                        functionName: "exec",
-                        args: [walletOperations, signatureEncoded],
-                        account: signer.address,
-                  })
-                  .catch((err) => {
-                        if (err instanceof BaseError) {
-                              const revertError = err.walk((err) => err instanceof ContractFunctionRevertedError);
-                              if (revertError && revertError instanceof ContractFunctionRevertedError) {
-                                    console.log(revertError.cause);
-                                    console.log(revertError.name);
-                              }
-                        }
-                  });
-
-            if (!sim?.request.args) throw new Error("Error simulating contract");
-
-            const { encodedSelector, encodedInput } = encodeOperation(OperationType.EXEC, sim?.request.args);
-            const operationCalldata = encodedSelector.concat(encodedInput.substring(2)) as Hex;
-
-            const populatedExecTx = await walletClient.prepareTransactionRequest({
-                  account: isUsingRelayer ? signer : account,
-                  to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-                  value: sim?.request.value,
-                  data: operationCalldata,
-                  chain: bscTestnet,
-            });
-
-            if (isUsingRelayer) {
-                  const hash = await walletClient.sendTransaction(populatedExecTx);
-                  return { hash };
-            }
-            return { populatedTrade: populatedExecTx };
-      }
-
-      private static encodePlan(
+      public static encodePlan(
             planner: WalletOperationBuilder,
-            config: Pick<SmartWalletTradeOptions, "smartWalletDetails" | "chainId">,
+            config: SmartWalletTradeOptions & { token: Address; amount: bigint },
       ) {
             const { userOps, externalUserOps } = planner;
             const { address, nonce } = config.smartWalletDetails;
-            const tradeTypedMetaData = typedMetaTx(userOps, nonce, address, config.chainId);
-            const executeTradeCallback = this.executeSmartWalletTrade;
 
-            return { tradeTypedMetaData, externalUserOps, executeTradeCallback };
+            const smartWalletTypedData = typedMetaTx(userOps, nonce, address, config.chainId);
+            const permit2TypedData = permit2TpedData(
+                  config.chainId,
+                  config.token,
+                  signer.address,
+                  address,
+                  signer.address,
+                  config.amount,
+                  0n,
+            );
+
+            return { permitDetails: permit2TypedData, smartWalletDetails: smartWalletTypedData, externalUserOps };
       }
 
-      public static async estimateSmartWalletFees({
-            userOps,
-            trade,
-            chainId,
-      }: SmartWalletGasParams): Promise<FeeResponse> {
+      public static async sendTransactionFromRelayer(
+            chainId: ChainId,
+            txConfig: UserOp,
+            config: { externalClient?: PublicClient },
+      ) {
+            const asyncClient = getPublicClient({ chainId });
+            const externalClient = config?.externalClient;
+            const client = externalClient || getWalletClient({ chainId });
+
+            if (!client.account) throw new AccountNotFoundError();
+            const account = parseAccount(client.account);
+
+            try {
+                  const tradeMeta = await client.prepareTransactionRequest({
+                        to: txConfig.to,
+                        value: txConfig.amount,
+                        data: txConfig.data,
+                        chain: bscTestnet,
+                        account,
+                  });
+                  const chainFormat = client.chain?.formatters?.transactionRequest?.format;
+                  const format = chainFormat || formatTransactionRequest;
+
+                  if (account.type === "local" && externalClient) {
+                        const serializer = client.chain?.serializers?.transaction;
+                        const signedTx = await account.signTransaction(format(tradeMeta), { serializer });
+                        const txHash = await client.sendRawTransaction({ serializedTransaction: signedTx });
+                        return await asyncClient.waitForTransactionReceipt({ hash: txHash, confirmations: 2 });
+                  }
+
+                  const txHash = await client.sendTransaction({
+                        ...tradeMeta,
+                        maxFeePerGas: undefined,
+                        maxPriorityFeePerGas: undefined,
+                  });
+                  return await asyncClient.waitForTransactionReceipt({ hash: txHash, confirmations: 2 });
+            } catch (error: unknown) {
+                  const errParams = { ...txConfig, account: client.account };
+                  throw getTransactionError(error as BaseError, errParams);
+            }
+      }
+
+      public static async estimateSmartWalletFees({ userOps, trade, chainId }: SmartWalletGasParams): Promise<any> {
             const publicClient = getPublicClient({ chainId: 56 });
             const usdToken = getUsdGasToken(56);
             if (!usdToken) {
@@ -196,8 +152,6 @@ export abstract class PancakeSwapSmartWalletRouter {
                   nativeWrappedToken.address,
             ]);
 
-            console.log(quoteCurrencyUsdPrice, baseCurrencyUsdPrice, nativeCurrencyUsdPrice);
-
             const quotePriceInUsd = getTokenPriceByNumber(usdToken, outputCurrency, quoteCurrencyUsdPrice?.priceUSD);
             const basePriceInUsd = getTokenPriceByNumber(usdToken, inputCurrency, baseCurrencyUsdPrice?.priceUSD);
             const nativePriceInUsd = getTokenPriceByNumber(
@@ -212,7 +166,8 @@ export abstract class PancakeSwapSmartWalletRouter {
             const basePriceInNative =
                   basePriceInUsd && nativePriceInUsd ? nativePriceInUsd.multiply(basePriceInUsd.invert()) : undefined;
 
-            let tradeGasEstimation = trade.gasEstimate;
+            let tradeGasEstimation = trade?.gasEstimate ?? (trade as any)?.gasUseEstimate ?? 0n;
+            // biome-ignore lint/complexity/noForEach: <explanation>
             userOps.forEach(async (operation: UserOp) => {
                   tradeGasEstimation += await publicClient.estimateGas({
                         data: operation.data,
@@ -226,12 +181,13 @@ export abstract class PancakeSwapSmartWalletRouter {
             const baseGasCostWei = gasPrice * tradeGasEstimation;
             const totalGasCostNativeCurrency = CurrencyAmount.fromRawAmount(nativeWrappedToken, baseGasCostWei);
 
-            let gasCostInQuoteToken: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(outputCurrency, 0);
-            let gasCostInBaseToken: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(outputCurrency, 0);
-            let gasCostInUSD: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(usdToken, 0);
+            let gasCostInQuoteToken: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(outputCurrency, 0n);
+            let gasCostInBaseToken: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(outputCurrency, 0n);
+            let gasCostInUSD: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(usdToken, 0n);
 
             if (inputCurrency.isNative) gasCostInBaseToken = totalGasCostNativeCurrency;
             if (outputCurrency.isNative) gasCostInQuoteToken = totalGasCostNativeCurrency;
+
             if (!inputCurrency.isNative && !outputCurrency.isNative && quotePriceInNative && basePriceInNative) {
                   gasCostInQuoteToken = quotePriceInNative.quote(totalGasCostNativeCurrency);
                   gasCostInBaseToken = basePriceInNative.quote(totalGasCostNativeCurrency);
@@ -241,34 +197,62 @@ export abstract class PancakeSwapSmartWalletRouter {
                   gasCostInUSD = nativePriceInUsd.quote(totalGasCostNativeCurrency);
             }
 
-            console.log(gasCostInBaseToken, gasCostInQuoteToken, gasCostInUSD, tradeGasEstimation);
             return {
                   gasEstimate: tradeGasEstimation,
-                  gasCostInQuoteToken: Number(gasCostInQuoteToken.quotient) / 10 ** 18,
-                  gasCostInBaseToken: Number(gasCostInBaseToken.quotient) / 10 ** 18,
-                  gasCostInUSD: Number(gasCostInUSD.quotient) / 10 ** 18,
+                  gasCostInQuoteToken,
+                  gasCostInBaseToken,
+                  gasCostInUSD,
             };
       }
 
-      public static async getUserSmartWalletDetails(
-            userAddress: Address,
+      public static async getContractAllowance(
+            tokenAddress: Address,
+            owner: Address,
+            spender: Address,
             chainId: ChainId,
-      ): Promise<SmartWalletDetails> {
+            amountToCheck?: bigint,
+      ): Promise<{ allowance: bigint; needsApproval: boolean }> {
+            try {
+                  const client = getViemClient({ chainId });
+
+                  const allowance = await client.readContract({
+                        functionName: "allowance",
+                        args: [owner, spender],
+                        address: tokenAddress,
+                        abi: ERC20ABI,
+                  });
+
+                  let needsApproval = false;
+                  if (amountToCheck && allowance < amountToCheck) {
+                        needsApproval = true;
+                        return { allowance, needsApproval };
+                  }
+
+                  return { allowance, needsApproval };
+            } catch (error) {
+                  throw getContractError(error as BaseError, {
+                        abi: ERC20ABI,
+                        address: tokenAddress,
+                        args: [owner, spender],
+                        functionName: "allowance",
+                  });
+            }
+      }
+
+      public static encodeSmartRouterTrade(args: [UserOp[], Hex], to: Address) {
+            const { encodedSelector, encodedInput } = encodeOperation(OperationType.EXEC, args);
+            const callData = encodedSelector.concat(encodedInput.substring(2)) as Hex;
+            return { to, amount: 0n, data: callData };
+      }
+
+      public static async getUserSmartWalletDetails(userAddress: Address, chainId: ChainId) {
             const publicClient = getPublicClient({ chainId });
             const factory = getSmartWalletFactory(chainId);
             const address = await factory.read.walletAddress([userAddress, BigInt(0)]);
 
             const code = await publicClient.getBytecode({ address });
             const smartWallet = getSmartWallet(chainId, address);
-            const nonce = await smartWallet.read.nonce();
-            return { address, nonce };
-      }
-
-      public static async getSmartWalletApproval(userAddress: Address, asset: Address, chainId: ChainId) {
-            const token = getErc20Contract(chainId, asset);
-            const { address } = await this.getUserSmartWalletDetails(userAddress, chainId);
-            const allowance = await token.read.allowance([userAddress, address]);
-            const requiresExternalApproval = Boolean(allowance <= BigInt(0));
-            return { requiresExternalApproval };
+            const nonce = code !== "0x" ? await smartWallet.read.nonce() : BigInt(0);
+            return { address, nonce, wallet: smartWallet };
       }
 }

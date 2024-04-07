@@ -1,15 +1,15 @@
-import { Permit2Signature } from "@pancakeswap/universal-router-sdk";
-import { ApproveProtocol, Permit2TransferFrom } from "../encoder/permit2Operations";
-import { PermitSig } from "../trades/permitSmartWallet";
+import type { PermitTransferFrom, Witness } from "@pancakeswap/permit2-sdk";
+import type { Permit2Signature } from "@pancakeswap/universal-router-sdk";
 
-export type Permite2Operations = {
-      approval?: ApproveProtocol | undefined;
-      permit2Permit?: Permit2Signature | undefined;
-      permit2TransferFrom?: Permit2TransferFrom | undefined;
+export type Permit2Operations = {
+      permit2Permit: Permit2Signature;
 };
 
-export type SmartWalletPermitOptions = Permite2Operations & {
-      permit2TransferFromWitness: PermitSig;
+export type SmartWalletPermitOptions = Permit2Operations & {
+      permit2TransferFrom: {
+            permit: PermitTransferFrom;
+            witness: Witness;
+      };
 };
 
-export type UniversalRouterPermitOptions = Permite2Operations;
+export type UniversalRouterPermitOptions = Permit2Operations;
