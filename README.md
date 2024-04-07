@@ -3,7 +3,7 @@
 This SDK extends the PancakeSwap Universl and Swap routers for enbling users to execute batched transactions from an abstracted smart contract wallet contract. This enables users to make advanced trades on pancakeswap such as custom gas fee token trades.
 
 ### Batched transactions
-The Smart Wallet is a smart contract router that the user can manage. the relayer of the wallet factory executes users the users contract calls through signature bsed verification. 
+The Smart Wallet is a smart contract router that the user can manage. the relayer of the wallet factory executes the users contract calls through signature bsed verification. 
 
 ### Witness transfers with Permit2
 The smart wallet contract also integrates with permit2 to enable users to execute trades from their smart wallet through as if they were calling from their main E0A account. this means that u dont need to deposit tokens into your smart wallet and then trade from there.
