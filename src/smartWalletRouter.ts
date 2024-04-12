@@ -1,29 +1,34 @@
 /* eslint-disable lines-between-class-members */
 import type { ChainId } from "@pancakeswap/chains";
+import { MaxUint256 } from "@pancakeswap/permit2-sdk";
 import { getTokenPrices } from "@pancakeswap/price-api-sdk";
-import { CurrencyAmount, type Currency, type TradeType } from "@pancakeswap/sdk";
-import { SwapRouter, type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
-import { BaseError } from "abitype";
-import { Address, PublicClient, formatTransactionRequest, type Hex } from "viem";
+import { CurrencyAmount, type Token, type Currency, type TradeType } from "@pancakeswap/sdk";
+import { SMART_ROUTER_ADDRESSES, SwapRouter, type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
+import {
+      PancakeSwapUniversalRouter as UniversalRouter,
+      getUniversalRouterAddress,
+      type PancakeSwapOptions,
+} from "@pancakeswap/universal-router-sdk";
+import type { BaseError } from "abitype";
+import { erc20Abi as ERC20ABI, formatTransactionRequest, type Address, type Hex, type PublicClient } from "viem";
 import { bscTestnet } from "viem/chains";
 import { getContractError, getTransactionError, parseAccount } from "viem/utils";
-import { getUniversalRouterAddress } from "@pancakeswap/universal-router-sdk";
-import { Routers } from "./encoder/buildOperation";
+import { RouterTradeType, Routers } from "./encoder/buildOperation";
 import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
-import { PancakeSwapOptions, PancakeSwapUniversalRouter as UniversalRouter } from "@pancakeswap/universal-router-sdk";
+import { permit2TpedData } from "./permit/permit2TypedData";
 import { getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient, signer } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
 import type { ClassicTradeOptions, SmartWalletGasParams, SmartWalletTradeOptions, UserOp } from "./types/smartWallet";
-import { getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
-import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
-import { permit2TpedData } from "./permit/permit2TypedData";
-import { typedMetaTx } from "./utils/typedMetaTx";
-import { erc20Abi as ERC20ABI } from "viem";
-import { RouterCofig } from "./types/eip712";
-import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
+import { getErc20Contract, getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
 import { AccountNotFoundError } from "./utils/error";
+import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
+import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
+import { typedMetaTx } from "./utils/typedMetaTx";
 
+function calculateGasMargin(value: bigint, margin = 1000n): bigint {
+      return (value * (10000n + margin)) / 10000n;
+}
 // biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 export abstract class SmartWalletRouter {
       public static account: Address;
@@ -32,9 +37,9 @@ export abstract class SmartWalletRouter {
       public static isInitialized = false;
       public static tradeConfig = {} as Partial<ClassicTradeOptions<any>> & SmartRouterTrade<TradeType>;
 
-      public static updateConfig(config: RouterCofig) {
+      public static updateConfig(config: SmartWalletTradeOptions) {
             this.account = config.account;
-            this.smartWallet = config.smartWallet;
+            this.smartWallet = config.smartWalletDetails.address;
             this.chainId = config.chainId;
       }
 
@@ -42,7 +47,7 @@ export abstract class SmartWalletRouter {
             trade: SmartRouterTrade<TradeType>,
             options: ClassicTradeOptions<UTradeOps>,
       ) {
-            this.tradeConfig = { ...options, trade };
+            this.tradeConfig = { ...options, ...trade };
             const routeOptions = options.underlyingTradeOptions;
             if (options.router === Routers.UniversalRouter) {
                   const { value, calldata } = UniversalRouter.swapERC20CallParameters(trade, routeOptions);
@@ -56,7 +61,11 @@ export abstract class SmartWalletRouter {
       }
 
       public static buildSmartWalletTrade(trade: SmartRouterTrade<TradeType>, options: SmartWalletTradeOptions) {
-            this.tradeConfig = { ...options, trade };
+            this.tradeConfig = { ...options, ...trade };
+
+            if (options.SmartWalletTradeType === RouterTradeType.SmartWalletTrade && !options.fees) {
+                  throw new Error("Fee Object must be provided with smart wallet trade");
+            }
 
             const planner = new WalletOperationBuilder();
             const tradeCommand = new ClasicTrade(trade, options);
@@ -93,7 +102,7 @@ export abstract class SmartWalletRouter {
       public static async sendTransactionFromRelayer(
             chainId: ChainId,
             txConfig: UserOp,
-            config: { externalClient?: PublicClient },
+            config?: { externalClient?: PublicClient },
       ) {
             const asyncClient = getPublicClient({ chainId });
             const externalClient = config?.externalClient;
@@ -103,11 +112,19 @@ export abstract class SmartWalletRouter {
             const account = parseAccount(client.account);
 
             try {
+                  const gas = await asyncClient.estimateGas({
+                        to: txConfig.to,
+                        value: txConfig.amount,
+                        data: txConfig.data,
+                        account,
+                  });
+
                   const tradeMeta = await client.prepareTransactionRequest({
                         to: txConfig.to,
                         value: txConfig.amount,
                         data: txConfig.data,
                         chain: bscTestnet,
+                        gas: calculateGasMargin(gas),
                         account,
                   });
                   const chainFormat = client.chain?.formatters?.transactionRequest?.format;
@@ -120,19 +137,21 @@ export abstract class SmartWalletRouter {
                         return await asyncClient.waitForTransactionReceipt({ hash: txHash, confirmations: 2 });
                   }
 
-                  const txHash = await client.sendTransaction({
-                        ...tradeMeta,
-                        maxFeePerGas: undefined,
-                        maxPriorityFeePerGas: undefined,
-                  });
-                  return await asyncClient.waitForTransactionReceipt({ hash: txHash, confirmations: 2 });
+                  const txHash = await client.sendTransaction({ ...tradeMeta });
+                  return await asyncClient.waitForTransactionReceipt({ hash: txHash, confirmations: 1 });
             } catch (error: unknown) {
                   const errParams = { ...txConfig, account: client.account };
                   throw getTransactionError(error as BaseError, errParams);
             }
       }
 
-      public static async estimateSmartWalletFees({ userOps, trade, chainId }: SmartWalletGasParams): Promise<any> {
+      public static async estimateSmartWalletFees({ address, options, trade, chainId }: SmartWalletGasParams): Promise<{
+            gasEstimate: bigint;
+            gasCostInNative: CurrencyAmount<Token>;
+            gasCostInQuoteToken: CurrencyAmount<Currency>;
+            gasCostInBaseToken: CurrencyAmount<Currency>;
+            gasCostInUSD: CurrencyAmount<Currency>;
+      }> {
             const publicClient = getPublicClient({ chainId: 56 });
             const usdToken = getUsdGasToken(56);
             if (!usdToken) {
@@ -148,7 +167,7 @@ export abstract class SmartWalletRouter {
 
             const [quoteCurrencyUsdPrice, baseCurrencyUsdPrice, nativeCurrencyUsdPrice] = await getTokenPrices(56, [
                   "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
-                  "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+                  "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
                   nativeWrappedToken.address,
             ]);
 
@@ -167,18 +186,68 @@ export abstract class SmartWalletRouter {
                   basePriceInUsd && nativePriceInUsd ? nativePriceInUsd.multiply(basePriceInUsd.invert()) : undefined;
 
             let tradeGasEstimation = trade?.gasEstimate ?? (trade as any)?.gasUseEstimate ?? 0n;
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            userOps.forEach(async (operation: UserOp) => {
-                  tradeGasEstimation += await publicClient.estimateGas({
-                        data: operation.data,
-                        account: signer.address,
-                        to: operation.to,
-                        value: operation.amount,
-                  });
-            });
 
+            const contract = getErc20Contract(97, trade.inputAmount.currency.wrapped.address);
+            if (options.walletPermitOptions) {
+                  await contract.estimateGas
+                        .transferFrom([address, options.smartWalletDetails.address, 0n], { account: signer.address })
+                        .then((gas) => {
+                              tradeGasEstimation += gas;
+                        })
+                        .catch((e) => {
+                              tradeGasEstimation += 25000n;
+                        });
+                  await contract.estimateGas
+                        .transferFrom([address, options.smartWalletDetails.address, 0n], { account: signer.address })
+                        .then((gas) => {
+                              tradeGasEstimation += gas;
+                        })
+                        .catch((e) => {
+                              tradeGasEstimation += 25000n;
+                        });
+            } else {
+                  await contract.estimateGas
+                        .transferFrom([address, options.smartWalletDetails.address, 0n], {
+                              account: signer.address,
+                        })
+                        .then((gas) => {
+                              tradeGasEstimation += gas;
+                        })
+                        .catch((e) => {
+                              tradeGasEstimation += 25000n;
+                        });
+
+                  await contract.estimateGas
+                        .transfer([signer.address, 0n], { account: signer.address })
+                        .then((gas) => {
+                              tradeGasEstimation += gas;
+                        })
+                        .catch((e) => {
+                              tradeGasEstimation += 25000n;
+                        });
+            }
+            await contract.estimateGas
+                  .approve([SMART_ROUTER_ADDRESSES[97], MaxUint256], { account: signer.address })
+                  .then((gas) => {
+                        tradeGasEstimation += gas;
+                  })
+                  .catch((e) => {
+                        tradeGasEstimation += 25000n;
+                  });
+            await contract.estimateGas
+                  .transfer([signer.address, trade.inputAmount.quotient], { account: address })
+                  .then((gas) => {
+                        tradeGasEstimation += gas;
+                  })
+                  .catch((e) => {
+                        tradeGasEstimation += 25000n;
+                  });
+
+            //cant estimate the SW exec itself because we need signature to pass ec recovery
+            // 50000 is accurate average estimation of its cost
+            const estimationOfSmartWalletBatchExec = 50000n;
             const gasPrice = await publicClient.getGasPrice();
-            const baseGasCostWei = gasPrice * tradeGasEstimation;
+            const baseGasCostWei = gasPrice * (tradeGasEstimation + estimationOfSmartWalletBatchExec);
             const totalGasCostNativeCurrency = CurrencyAmount.fromRawAmount(nativeWrappedToken, baseGasCostWei);
 
             let gasCostInQuoteToken: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(outputCurrency, 0n);
@@ -199,6 +268,7 @@ export abstract class SmartWalletRouter {
 
             return {
                   gasEstimate: tradeGasEstimation,
+                  gasCostInNative: totalGasCostNativeCurrency,
                   gasCostInQuoteToken,
                   gasCostInBaseToken,
                   gasCostInUSD,

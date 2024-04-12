@@ -21,6 +21,7 @@ export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
 
 export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOptions> {
       hasApprovedPermit2: boolean;
+      hasApprovedRelayer: boolean;
       walletPermitOptions?: SmartWalletPermitOptions;
       smartWalletDetails: { address: Address; nonce: bigint };
       SmartWalletTradeType: RouterTradeType;

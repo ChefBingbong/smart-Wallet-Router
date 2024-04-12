@@ -6,6 +6,7 @@ import { privateKeyToAccount } from "viem/accounts";
 const account = "0x22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4";
 const userAccount = "0x225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a";
 export const userSigner = privateKeyToAccount(userAccount);
+export const signer = privateKeyToAccount(userAccount);
 
 const createClients = <TClient extends Client>(chains: Chain[]) => {
       return (type: "Wallet" | "Public"): Record<ChainId, TClient> => {
@@ -14,7 +15,7 @@ const createClients = <TClient extends Client>(chains: Chain[]) => {
                         const clientConfig = { chain: cur, transport: http() };
                         const client =
                               type === "Wallet"
-                                    ? createWalletClient({ ...clientConfig, account })
+                                    ? createWalletClient({ ...clientConfig, account: signer, key: "SmartWaletClient" })
                                     : createPublicClient(clientConfig);
                         return {
                               ...prev,
@@ -63,4 +64,4 @@ export const getWalletClient = ({ chainId }: { chainId?: ChainId }) => {
       return walletClients[chainId!];
 };
 
-export const signer = privateKeyToAccount(account);
+// export const signer = privateKeyToAccount(account);

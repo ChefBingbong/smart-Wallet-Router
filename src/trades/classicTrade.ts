@@ -71,11 +71,13 @@ export class ClasicTrade implements Command {
                   planner.addExternalUserOperation(OperationType.CLAIM_PERMIT, [permitToken, amountIn], permitToken);
                   planner.addExternalUserOperation(OperationType.TRANSFER, [routerRecipient, amountIn], permitToken);
             } else {
-                  planner.addExternalUserOperation(
-                        OperationType.APPROVE,
-                        [smartWalletDetails.address, amountIn],
-                        inputToken,
-                  );
+                  if (!options.hasApprovedRelayer) {
+                        planner.addExternalUserOperation(
+                              OperationType.APPROVE,
+                              [smartWalletDetails.address, amountIn],
+                              inputToken,
+                        );
+                  }
                   planner.addUserOperation(
                         OperationType.TRANSFER_FROM,
                         [account, smartWalletDetails.address, amountIn],

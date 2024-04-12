@@ -26,19 +26,18 @@ export const sign = async (userOps: UserOp[], tx: any, account: SignerWithAddres
       };
 
       const types = {
-            UserOperation: [
+            UserOp: [
                   { name: "to", type: "address" },
                   { name: "amount", type: "uint256" },
                   { name: "data", type: "bytes" },
             ],
             ECDSAExec: [
-                  { name: "userOps", type: "UserOperation[]" },
+                  { name: "userOps", type: "UserOp[]" },
                   { name: "nonce", type: "uint256" },
                   { name: "chainID", type: "uint256" },
                   { name: "sigChainID", type: "uint256" },
             ],
       };
-
       const values = {
             userOps: userOps,
             nonce: tx,

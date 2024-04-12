@@ -66,20 +66,17 @@ contract ECDSAWalletFactory is Ownable {
             PERMIT2.permitWitnessTransferFrom(
                   _permit,
                   ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: _amount}),
-                  _owner,
-                  keccak256(abi.encode(WITNESS_TYPEHASH, Witness(_user))),
+                  _user,
+                  keccak256(abi.encode(WITNESS_TYPEHASH, Witness(_owner))),
                   WITNESS_TYPE_STRING,
                   _signature
             );
+
+            tokenBalancesByUser[_user][_token] -= _amount;
+            IERC20(_token).safeTransfer(_owner, _amount);
       }
 
       function _increaseUserBalance(address _account, address _token, uint256 _amount) internal {
             tokenBalancesByUser[_account][_token] += _amount;
-      }
-
-      function withdrawERC20(address _token, uint256 _amount, address recipient) external {
-            tokenBalancesByUser[msg.sender][_token] -= _amount;
-
-            IERC20(_token).safeTransfer(recipient, _amount);
       }
 }

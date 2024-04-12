@@ -38,11 +38,14 @@ library SignatureVerification {
                         revert InvalidSignatureLength();
                   }
                   address signer = ecrecover(hash, v, r, s);
-                  console.log(signer, claimedSigner);
+                  console.log(signer, claimedSigner, "yyyyyyyyyyyyyyyy");
                   if (signer == address(0)) revert InvalidSignature();
                   if (signer != claimedSigner) revert InvalidSigner();
             } else {
+                  //  console.log(signer, claimedSigner);
                   bytes4 magicValue = IERC1271(claimedSigner).isValidSignature(hash, signature);
+                  //   console.log(magicValue);
+
                   if (magicValue != IERC1271.isValidSignature.selector) revert InvalidContractSignature();
             }
       }
