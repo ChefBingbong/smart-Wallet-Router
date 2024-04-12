@@ -1,5 +1,5 @@
 import { getPermit2Address } from "@pancakeswap/permit2-sdk";
-import { ChainId, type TradeType } from "@pancakeswap/sdk";
+import type { ChainId, TradeType } from "@pancakeswap/sdk";
 import { SmartRouter, SwapRouter, type SmartRouterTrade } from "@pancakeswap/smart-router";
 import { maxUint256, type Address } from "viem";
 import { getUniversalRouterAddress } from "@pancakeswap/universal-router-sdk";
@@ -8,10 +8,8 @@ import { OperationType, type WalletOperationBuilder } from "../encoder/walletOpe
 import { getSwapRouterAddress } from "../utils/getSwapRouterAddress";
 import { PancakeSwapUniversalRouter } from "@pancakeswap/universal-router-sdk";
 import type { SmartWalletTradeOptions } from "../types/smartWallet";
+import { signer } from "../provider/walletClient";
 
-export const SupportedFeeTokens: { [chain: number]: Address[] } = {
-      [ChainId.BSC_TESTNET]: ["0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"],
-};
 export const RouterRecipientByTrade: { [router in Routers]: (chain: ChainId) => Address } = {
       [Routers.UniversalRouter]: (chainId: ChainId) => getUniversalRouterAddress(chainId),
       [Routers.SmartOrderRouter]: (chainId: ChainId) => getSwapRouterAddress(chainId),
@@ -25,7 +23,7 @@ export class ClasicTrade implements Command {
       ) {
             this.tradeType = this.options.SmartWalletTradeType;
             const { underlyingTradeOptions } = options;
-            if (underlyingTradeOptions.fee && underlyingTradeOptions.flatFee) {
+            if (underlyingTradeOptions?.fee && underlyingTradeOptions?.flatFee) {
                   throw new Error("Cannot specify both fee and flatFee");
             }
       }
@@ -60,32 +58,44 @@ export class ClasicTrade implements Command {
                         );
                   }
 
-                  planner.addExternalUserOperation(OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS, [
-                        amountIn,
-                        permitToken as Address,
-                        account,
-                        permitSpender as Address,
-                        permit, // to add
-                        permitSignature, // to do add
-                  ]);
-                  planner.addExternalUserOperation(OperationType.CLAIM_PERMIT, [permitToken, amountIn], permitToken);
-                  planner.addExternalUserOperation(OperationType.TRANSFER, [routerRecipient, amountIn], permitToken);
+                  // planner.addExternalUserOperation(OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS, [
+                  //       amountIn,
+                  //       permitToken as Address,
+                  //       account,
+                  //       permitSpender as Address,
+                  //       permit, // to add
+                  //       permitSignature, // to do add
+                  // ]);
+                  // planner.addExternalUserOperation(OperationType.CLAIM_PERMIT, [permitToken, amountIn], permitToken);
+                  // planner.addExternalUserOperation(OperationType.TRANSFER, [routerRecipient, amountIn], permitToken);
             } else {
+                  // only can support same currency transfers as of now
+                  const transferAmount = options.fees ? amountIn + options.fees.feeAmount.quotient : amountIn;
+
                   if (!options.hasApprovedRelayer) {
                         planner.addExternalUserOperation(
                               OperationType.APPROVE,
-                              [smartWalletDetails.address, amountIn],
+                              [smartWalletDetails.address, transferAmount],
                               inputToken,
                         );
                   }
+
                   planner.addUserOperation(
                         OperationType.TRANSFER_FROM,
-                        [account, smartWalletDetails.address, amountIn],
+                        [account, smartWalletDetails.address, transferAmount],
+                        inputToken,
+                  );
+            }
+            if (options.SmartWalletTradeType === RouterTradeType.SmartWalletTrade && options.fees) {
+                  console.log("am making it");
+                  planner.addUserOperation(
+                        OperationType.TRANSFER,
+                        [signer.address, options.fees.feeAmount.quotient],
                         inputToken,
                   );
             }
             if (routerRecipient === smartRouterAddress) {
-                  const { calldata, value } = SwapRouter.swapCallParameters(trade, tradeOptions);
+                  const { calldata, value } = SwapRouter.swapCallParameters(trade, tradeOptions as never);
                   planner.addUserOperation(OperationType.APPROVE, [routerRecipient, BigInt(amountIn)], inputToken);
                   planner.addUserOperationFromCall([{ address: routerRecipient, calldata, value }]);
             }

@@ -1,10 +1,7 @@
-import type { ChainFormatter } from "viem";
+import { type Hex, decodeFunctionData, type ChainFormatter } from "viem";
 import type { ErrorType } from "viem/_types/errors/utils";
 export type ExtractErrorType = ErrorType;
 
-/**
- * @description Picks out the keys from `value` that exist in the formatter..
- */
 export function extract(
       value_: Record<string, unknown>,
       { format }: { format?: ChainFormatter["format"] | undefined },
@@ -12,7 +9,7 @@ export function extract(
       if (!format) return {};
 
       const value: Record<string, unknown> = {};
-      function extract_(formatted: Record<string, any>) {
+      function extract_(formatted: Record<string, never>) {
             const keys = Object.keys(formatted);
             for (const key of keys) {
                   if (key in value_) value[key] = value_[key];
@@ -25,4 +22,14 @@ export function extract(
       extract_(formatted);
 
       return value;
+}
+
+export function decodeFunctionSelector(data: Hex, abi: never) {
+      try {
+            const functionSelector = decodeFunctionData({ data, abi: abi });
+            return functionSelector;
+      } catch (error) {
+            console.error("Error decoding function selector:", error);
+            return undefined;
+      }
 }

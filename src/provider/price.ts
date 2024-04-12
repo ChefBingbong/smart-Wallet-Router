@@ -1,5 +1,5 @@
 import { getViemClient } from "./client";
-import { chainlinkOracleABI } from "../../abis/ChainLinkOracleAbi";
+import { chainlinkOracleABI } from "../abis/ChainLinkOracleAbi";
 import { chainlinkOracleBNB, chainlinkOracleCAKE } from "../constants/chainLinkOracle";
 import { ChainId } from "@pancakeswap/chains";
 import { formatUnits } from "viem";

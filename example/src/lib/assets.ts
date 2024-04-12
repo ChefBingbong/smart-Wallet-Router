@@ -30,7 +30,7 @@ export const tickerToAddress: Record<string, string> = {
 export const assetsBaseConfig: Record<Asset, ERC20Token> = {
   BUSD: new ERC20Token(
     ChainId.BSC_TESTNET,
-    "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
+    "0x6F451Eb92d7dE92DdF6939d9eFCE6799246B3a4b",
     18,
     "BUSD",
     "Binance USD",
@@ -39,7 +39,7 @@ export const assetsBaseConfig: Record<Asset, ERC20Token> = {
   WBNB: bscTestnetTokens.wbnb,
   CAKE: new ERC20Token(
     ChainId.BSC_TESTNET,
-    "0xFa60D973F7642B748046464e165A65B7323b0DEE",
+    "0x501B55184813f7a29eb98DECD8EC9B6D07DEB263",
     18,
     "CAKE",
     "PancakeSwap Token",

@@ -1,16 +1,12 @@
-import { ChainId } from "@pancakeswap/chains";
-import { PoolType } from "@pancakeswap/smart-router";
-import { TradeType } from "@pancakeswap/swap-sdk-core";
-import {
-  type DefaultError,
-  type QueryKey,
-  type UseInfiniteQueryOptions,
-  type UseMutationOptions,
-  type UseMutationResult,
-  type UseQueryOptions,
+import type { ChainId } from "@pancakeswap/chains";
+import type {
+  DefaultError,
+  QueryKey,
+  UseQueryOptions,
 } from "@tanstack/react-query";
+import type { Address } from "viem";
 
-export type Evaluate<type> = { [key in keyof type]: type[key] } & unknown;
+export type Evaluate<type> = { [key in keyof type]: type[key] };
 
 export type ExactPartial<type> = {
   [key in keyof type]?: type[key] | undefined;
@@ -28,7 +24,7 @@ export function createQueryKey<
   deps extends readonly unknown[],
 >(id: key) {
   return (deps?: RecursiveDeps<deps>) =>
-    [id, ...(deps || [])] as unknown as [key, ...deps];
+    [id, ...(deps ?? [])] as unknown as [key, ...deps];
 }
 
 export type UseQueryParameters<
@@ -49,138 +45,11 @@ export type UseQueryParameters<
     >
   >
 >;
-export type UseInfiniteQueryParameters<
-  queryFnData = unknown,
-  error = DefaultError,
-  data = queryFnData,
-  queryData = queryFnData,
-  queryKey extends QueryKey = QueryKey,
-  pageParam = unknown,
-> = Evaluate<
-  Omit<
-    UseInfiniteQueryOptions<
-      queryFnData,
-      error,
-      data,
-      queryData,
-      queryKey,
-      pageParam
-    >,
-    | "initialData"
-    | "queryFn"
-    | "queryHash"
-    | "queryKey"
-    | "queryKeyHashFn"
-    | "throwOnError"
-    | "defaultPageParam"
-    | "getNextPageParam"
-    | "initialPageParam"
-  >
-  // & {
-  //   // Fix `initialData` type
-  //   initialData?: UseInfiniteQueryOptions<
-  //     queryFnData,
-  //     error,
-  //     data,
-  //     queryKey
-  //   >['initialData']
-  // }
->;
 
-export type UseMutationParameters<
-  data = unknown,
-  error = Error,
-  variables = void,
-  context = unknown,
-> = Evaluate<
-  Omit<
-    UseMutationOptions<data, error, Evaluate<variables>, context>,
-    "mutationFn" | "mutationKey" | "throwOnError"
-  >
->;
-
-export type UseMutationReturnType<
-  data = unknown,
-  error = Error,
-  variables = void,
-  context = unknown,
-> = Evaluate<
-  Omit<
-    UseMutationResult<data, error, variables, context>,
-    "mutate" | "mutateAsync"
-  >
->;
-
-export type ProviderQuote = {
-  providerFee: number;
-  networkFee: number;
-  quote: number;
-  amount: number;
-  fiatCurrency: string;
-  cryptoCurrency: string;
-  provider: keyof typeof ONRAMP_PROVIDERS;
-  price?: number;
-  error?: string;
+export type TradeQuotePayload = {
+  toAsset: string;
+  fromAsset: string;
+  chainId: ChainId;
+  amount: string;
+  account: Address;
 };
-
-export enum CryptoFormView {
-  Input,
-  Quote,
-}
-
-export type FiatCurrency = {
-  symbol: string;
-  name: string;
-};
-
-export type OnRampProviderQuote = {
-  providerFee: number;
-  networkFee: number;
-  amount: number;
-  quote: number;
-  fiatCurrency: string;
-  cryptoCurrency: string;
-  provider: keyof typeof ONRAMP_PROVIDERS;
-  price: number;
-  noFee?: number;
-  error?: any;
-};
-
-export type QuotesPayload = {
-  chainId: ChainId | number;
-  fromAssetSymbol: string;
-  toAssetSymbol: string;
-  tradeType: TradeType;
-  deferQuotient: bigint;
-  maxHops: number;
-  maxSplits: number;
-  poolTypes: PoolType;
-};
-
-export type OnRampLimitsPayload = {
-  fiatCurrency: string | undefined;
-  cryptoCurrency: string | undefined;
-  network: OnRampChainId | ChainId | undefined;
-};
-
-export type OnRampSignaturesPayload = {
-  provider: keyof typeof ONRAMP_PROVIDERS;
-  fiatCurrency: string | undefined;
-  cryptoCurrency: string | undefined;
-  network: string | undefined;
-  amount: number;
-  redirectUrl: string;
-  externalTransactionId: string | undefined;
-  walletAddress: string | undefined;
-};
-
-export type CurrencyLimits = {
-  code: string;
-  maxBuyAmount: number;
-  minBuyAmount: number;
-};
-
-export interface LimitQuote {
-  baseCurrency: CurrencyLimits;
-  quoteCurrency: CurrencyLimits;
-}

@@ -1,8 +1,4 @@
-import { bsc } from "viem/chains";
-import { createConfig } from "wagmi";
-import { MetaMaskConnector } from "wagmi/connectors/metaMask";
-
-import { type ChainId } from "@pancakeswap/chains";
+import type { ChainId } from "@pancakeswap/chains";
 import { configureChains } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
@@ -12,7 +8,8 @@ const mostNodesConfig = Object.values(PUBLIC_NODES).reduce((prev, cur) => {
   return cur.length > prev ? cur.length : prev;
 }, 0);
 
-export const { publicClient, chains } = configureChains(
+export { chains, publicClient };
+const { publicClient, chains } = configureChains(
   CHAINS,
   Array.from({ length: mostNodesConfig })
     .map((_, i) => i)
@@ -45,8 +42,8 @@ export const { publicClient, chains } = configureChains(
   },
 );
 
-export const config = createConfig({
-  autoConnect: true,
-  connectors: [new MetaMaskConnector({ chains: [bsc] })],
-  publicClient,
-});
+export const noopStorage = {
+  getItem: (_key: never) => "",
+  setItem: (_key: never, _value: never) => null,
+  removeItem: (_key: never) => null,
+};

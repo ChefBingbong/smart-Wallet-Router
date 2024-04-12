@@ -1,7 +1,6 @@
 import IPancakePair from "../abis/IPancakePair.json";
 import PCAKE_ROUTERABI from "../abis/PancakeRouter.json";
 import FACTORY_ABI from "../abis/FactoryAbi.json";
-import Web3 from "web3";
 import { useCallback } from "react";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
 import {
