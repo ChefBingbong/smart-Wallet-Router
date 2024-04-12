@@ -13,8 +13,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
       const res = await deploy("ECDSAWalletFactory", {
             from: deployer,
-            args: [smartWallet.address, getPermit2Address(hre.network.config.chainId)],
+            args: [smartWallet.address, "0x89b5B5d93245f543D53CC55923DF841349a65169"],
             log: true,
+            skipIfAlreadyDeployed: false,
+            deterministicDeployment: "0x02",
       });
       // await res.d
       console.log("ECDSAWalletFactory Address", res.address);

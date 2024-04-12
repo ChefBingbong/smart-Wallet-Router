@@ -1,11 +1,10 @@
+"use-client";
 import { defaultAbiCoder } from "@ethersproject/abi";
-import { getPermit2Address } from "@pancakeswap/permit2-sdk";
 import {
-  type ChainId,
-  type Currency,
-  CurrencyAmount,
-  Percent,
-} from "@pancakeswap/sdk";
+  getWalletPermit2Address as getPermit2Address,
+  getWalletPermit2Address,
+} from "~/utils/getWalletPermit2Address";
+import { type ChainId, type Currency, CurrencyAmount } from "@pancakeswap/sdk";
 import { CopyIcon } from "@pancakeswap/uikit";
 import { LoadingSpinner } from "@saas-ui/react";
 import { SmartWalletRouter } from "@smart-wallet/router-sdk";
@@ -17,6 +16,7 @@ import {
   type TransactionReceipt,
   TransactionRejectedRpcError,
   UserRejectedRequestError,
+  Address,
 } from "viem";
 import {
   useAccount,
@@ -34,6 +34,13 @@ import { useSmartRouterBestTrade } from "~/hooks/useSmartRouterBestTrade";
 import { type Asset, assets, assetsBaseConfig } from "~/lib/assets";
 import { wagmiconfig as config } from "~/pages/_app";
 import { getSmartWalletOptions } from "~/utils/getSmartWalletOptions";
+import {
+  PERMIT_SIG_EXPIRATION,
+  PermitTransferFrom,
+  SignatureTransfer,
+  Witness,
+  toDeadline,
+} from "@pancakeswap/permit2-sdk";
 
 export enum ConfirmModalState {
   REVIEWING = 0,
@@ -68,8 +75,8 @@ const IndexPage = () => {
   const [toAsset, setToAsset] = useState<Currency>(assetsBaseConfig.BUSD);
   const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.CAKE);
 
-  const balance = useTokenBalance(asset.wrapped.address);
-  const balance2 = useTokenBalance(toAsset.wrapped.address);
+  const balance = useTokenBalance(asset.wrapped.address, true);
+  const balance2 = useTokenBalance(toAsset.wrapped.address, true);
 
   const amount = useMemo(
     () =>
@@ -173,6 +180,7 @@ const IndexPage = () => {
       if (!address || !chainId || !trade || !allowance) return undefined;
       const options = getSmartWalletOptions(
         address,
+        true,
         allowance,
         smartWalletDetails as never,
         chainId,
@@ -205,13 +213,15 @@ const IndexPage = () => {
 
     const options = getSmartWalletOptions(
       address,
+      true,
       allowance,
       smartWalletDetails as never,
       chainId,
-      {
-        feeTokenAddress: feeAsset.wrapped.address,
-        feeAmount: fees.gasCostInBaseToken,
-      } as never,
+      // {
+      //   feeTokenAddress: feeAsset.wrapped.address,
+      //   feeAmount: fees.gasCostInBaseToken,
+      // } as never,
+      undefined,
     );
     return SmartWalletRouter.buildSmartWalletTrade(trade, options);
   }, [trade, address, chainId, allowance, smartWalletDetails, fees, feeAsset]);
@@ -235,57 +245,77 @@ const IndexPage = () => {
         );
       }
     }
-    const { domain, types, values } = swapCallParams.smartWalletDetails;
+    const permitTypedData = swapCallParams.permitDetails;
     setTXState(ConfirmModalState.PENDING_CONFIRMATION);
 
     await signTypedDataAsync({
       account: address,
-      domain,
-      types,
-      message: values,
-      primaryType: "ECDSAExec",
-    })
-      .then(async (signature) => {
-        const signatureEncoded = defaultAbiCoder.encode(
-          ["uint256", "bytes"],
-          [chainId, signature],
-        );
+      domain: permitTypedData.domain,
+      types: permitTypedData.types,
+      message: permitTypedData.values,
+      primaryType: "PermitWitnessTransferFrom",
+    }).then(async (permittSig) => {
+      const { domain, types, values } = swapCallParams.smartWalletDetails;
+      const { userOps: permiUserOps } = SmartWalletRouter.appendPermit2UserOp(
+        permittSig,
+        address,
+        permitTypedData,
+      );
+      const updatedOps = [...permiUserOps, ...values.userOps];
 
-        const tradeArgs = [values.userOps, signatureEncoded];
-        const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
-          tradeArgs,
-          smartWalletDetails?.address,
-        );
-
-        let response = null;
-        if (
-          (SmartWalletRouter.tradeConfig.tradeType as unknown as string) !==
-          "SmartWalletTrade"
-        ) {
-          response = await SmartWalletRouter.sendTransactionFromRelayer(
-            chainId,
-            tradeEncoded,
-          );
-        } else {
-          response = await SmartWalletRouter.sendTransactionFromRelayer(
-            chainId,
-            tradeEncoded,
-            {
-              externalClient: windowClient,
-            },
-          );
-        }
-        setTx(response.transactionHash);
-        setTXState(ConfirmModalState.COMPLETED);
-        return response as TransactionReceipt;
+      await signTypedDataAsync({
+        account: address,
+        domain,
+        types,
+        message: {
+          ...values,
+          userOps: updatedOps,
+        },
+        primaryType: "ECDSAExec",
       })
-      .catch((err: unknown) => {
-        setTXState(ConfirmModalState.REVIEWING);
-        if (err instanceof UserRejectedRequestError) {
-          throw new TransactionRejectedRpcError(Error("Transaction rejected"));
-        }
-        throw new Error(`Swap Failed ${err as string}`);
-      });
+        .then(async (signature) => {
+          const signatureEncoded = defaultAbiCoder.encode(
+            ["uint256", "bytes"],
+            [chainId, signature],
+          );
+
+          const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
+            [updatedOps, signatureEncoded],
+            smartWalletDetails?.address,
+          );
+
+          let response = null;
+          if (
+            (SmartWalletRouter.tradeConfig.tradeType as unknown as string) !==
+            "SmartWalletTrade"
+          ) {
+            response = await SmartWalletRouter.sendTransactionFromRelayer(
+              chainId,
+              tradeEncoded,
+            );
+          } else {
+            response = await SmartWalletRouter.sendTransactionFromRelayer(
+              chainId,
+              tradeEncoded,
+              {
+                externalClient: windowClient,
+              },
+            );
+          }
+          setTx(response.transactionHash);
+          setTXState(ConfirmModalState.COMPLETED);
+          return response as TransactionReceipt;
+        })
+        .catch((err: unknown) => {
+          setTXState(ConfirmModalState.REVIEWING);
+          if (err instanceof UserRejectedRequestError) {
+            throw new TransactionRejectedRpcError(
+              Error("Transaction rejected"),
+            );
+          }
+          throw new Error(`Swap Failed ${err as string}`);
+        });
+    });
   }, [
     swapCallParams,
     address,

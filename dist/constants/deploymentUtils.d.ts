@@ -3,7 +3,8 @@ import type { Address } from "viem";
 export declare enum Contracts {
     ECDSAWalletFactory = "ECDSAWalletFactory",
     SmartWalletFactory = "SmartWalletFactory",
-    Depositor = "Depositor"
+    Depositor = "Depositor",
+    Permit2 = "Permit2"
 }
 export declare enum ExtendedChainId {
     POLYGON_TESTNET = 80001,

@@ -1,6 +1,6 @@
 /* eslint-disable lines-between-class-members */
 import type { ChainId } from "@pancakeswap/chains";
-import { MaxUint256 } from "@pancakeswap/permit2-sdk";
+import { MaxUint256, PermitTransferFromData } from "@pancakeswap/permit2-sdk";
 import { getTokenPrices } from "@pancakeswap/price-api-sdk";
 import { CurrencyAmount, type Token, type Currency, type TradeType } from "@pancakeswap/sdk";
 import { SMART_ROUTER_ADDRESSES, SwapRouter, type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
@@ -15,7 +15,7 @@ import { bscTestnet } from "viem/chains";
 import { getContractError, getTransactionError, parseAccount } from "viem/utils";
 import { RouterTradeType, Routers } from "./encoder/buildOperation";
 import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
-import { permit2TpedData } from "./permit/permit2TypedData";
+import { PermitWithWithWitness, permit2TpedData } from "./permit/permit2TypedData";
 import { getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient, signer } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
@@ -25,6 +25,7 @@ import { AccountNotFoundError } from "./utils/error";
 import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
 import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
 import { typedMetaTx } from "./utils/typedMetaTx";
+import { Deployments } from "./constants/deploymentUtils";
 
 function calculateGasMargin(value: bigint, margin = 1000n): bigint {
       return (value * (10000n + margin)) / 10000n;
@@ -63,9 +64,9 @@ export abstract class SmartWalletRouter {
       public static buildSmartWalletTrade(trade: SmartRouterTrade<TradeType>, options: SmartWalletTradeOptions) {
             this.tradeConfig = { ...options, ...trade };
 
-            if (options.SmartWalletTradeType === RouterTradeType.SmartWalletTrade && !options.fees) {
-                  throw new Error("Fee Object must be provided with smart wallet trade");
-            }
+            // if (options.SmartWalletTradeType === RouterTradeType.SmartWalletTrade && !options.fees) {
+            //       throw new Error("Fee Object must be provided with smart wallet trade");
+            // }
 
             const planner = new WalletOperationBuilder();
             const tradeCommand = new ClasicTrade(trade, options);
@@ -86,17 +87,39 @@ export abstract class SmartWalletRouter {
             const { address, nonce } = config.smartWalletDetails;
 
             const smartWalletTypedData = typedMetaTx(userOps, nonce, address, config.chainId);
+            const permitSpender = Deployments[config.chainId].ECDSAWalletFactory;
             const permit2TypedData = permit2TpedData(
                   config.chainId,
-                  config.token,
-                  signer.address,
-                  address,
+                  userOps[0].to,
+                  permitSpender,
                   signer.address,
                   config.amount,
-                  0n,
+                  14n, // get correct nonce on FE
             );
 
             return { permitDetails: permit2TypedData, smartWalletDetails: smartWalletTypedData, externalUserOps };
+      }
+
+      public static appendPermit2UserOp(
+            signature: Hex,
+            account: Address,
+            permit2TypedData: PermitTransferFromData & PermitWithWithWitness,
+      ) {
+            const permitPlanner = new WalletOperationBuilder();
+
+            permitPlanner.addUserOperation(
+                  OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS,
+                  [
+                        BigInt(permit2TypedData.values.permitted.amount),
+                        permit2TypedData.values.permitted.token as Address,
+                        signer.address as Address,
+                        account,
+                        permit2TypedData.permit as never,
+                        signature,
+                  ],
+                  permit2TypedData.values.spender as Address,
+            );
+            return permitPlanner;
       }
 
       public static async sendTransactionFromRelayer(
@@ -112,11 +135,13 @@ export abstract class SmartWalletRouter {
             const account = parseAccount(client.account);
 
             try {
-                  const gas = await asyncClient.estimateGas({
+                  const gasPrice = await asyncClient.getGasPrice();
+                  const gasE = await asyncClient.estimateGas({
                         to: txConfig.to,
                         value: txConfig.amount,
                         data: txConfig.data,
                         account,
+                        // gas: 20000,
                   });
 
                   const tradeMeta = await client.prepareTransactionRequest({
@@ -124,7 +149,9 @@ export abstract class SmartWalletRouter {
                         value: txConfig.amount,
                         data: txConfig.data,
                         chain: bscTestnet,
-                        gas: calculateGasMargin(gas),
+                        gas: calculateGasMargin(gasE),
+                        gasPrice,
+
                         account,
                   });
                   const chainFormat = client.chain?.formatters?.transactionRequest?.format;
@@ -188,7 +215,7 @@ export abstract class SmartWalletRouter {
             let tradeGasEstimation = trade?.gasEstimate ?? (trade as any)?.gasUseEstimate ?? 0n;
 
             const contract = getErc20Contract(97, trade.inputAmount.currency.wrapped.address);
-            if (options.walletPermitOptions) {
+            if (options.isUsingPermit2) {
                   await contract.estimateGas
                         .transferFrom([address, options.smartWalletDetails.address, 0n], { account: signer.address })
                         .then((gas) => {

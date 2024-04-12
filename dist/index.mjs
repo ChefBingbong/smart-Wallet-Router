@@ -1,4 +1,4 @@
-import { MaxUint256, SignatureTransfer, getPermit2Address } from '@pancakeswap/permit2-sdk';
+import { MaxUint256, SignatureTransfer } from '@pancakeswap/permit2-sdk';
 import { getTokenPrices } from '@pancakeswap/price-api-sdk';
 import { CurrencyAmount, WNATIVE, Price } from '@pancakeswap/sdk';
 import { SwapRouter, SMART_ROUTER_ADDRESSES, SmartRouter } from '@pancakeswap/smart-router';
@@ -123,25 +123,23 @@ var generatePermitTransferFromTypedData = (token, amount, spender, _witness, non
       amount
     },
     spender,
-    nonce: nonce.toString(),
+    nonce,
     deadline: toDeadline(PERMIT_SIG_EXPIRATION).toString()
   };
   const witness = {
     witnessTypeName: "Witness",
-    witnessType: { Witness: [{ name: "SmartWallet Relayer", type: "address" }] },
+    witnessType: { Witness: [{ name: "user", type: "address" }] },
     witness: { user: _witness }
   };
   return { permit, witness };
 };
-var permit2TpedData = async (chainId, token, spender, account2, witness, amount, nonce) => {
+var permit2TpedData = (chainId, token, spender, witness, amount, nonce) => {
   if (!chainId)
     throw new Error("PERMIT: missing chainId");
   if (!token)
     throw new Error("PERMIT: missing token");
   if (!spender)
     throw new Error("PERMIT: missing spender");
-  if (!account2)
-    throw new Error("PERMIT: missing owner");
   if (!token)
     throw new Error("PERMIT: missing token");
   if (nonce === void 0)
@@ -151,7 +149,12 @@ var permit2TpedData = async (chainId, token, spender, account2, witness, amount,
     domain,
     types,
     values: message
-  } = SignatureTransfer.getPermitData(permit.permit, getPermit2Address(chainId), chainId, permit.witness);
+  } = SignatureTransfer.getPermitData(
+    permit.permit,
+    "0x89b5B5d93245f543D53CC55923DF841349a65169",
+    chainId,
+    permit.witness
+  );
   return {
     ...permit,
     domain,
@@ -168,113 +171,138 @@ var Deployments = {
     ECDSAWalletFactory: "0xC6D72727dAD90e4711412e369aE67706d0EF7C02",
     SmartWalletFactory: "0xab381dB93d006bF653D62c1727D418f6E76a28e7",
     Depositor: "0x",
+    Permit2: "0x",
     ...polygonTokens
   },
   [31337 /* LOCAL */]: {
     ECDSAWalletFactory: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     SmartWalletFactory: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
     // weth: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
   },
   [ChainId.ETHEREUM]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.GOERLI]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.BSC]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.BSC_TESTNET]: {
-    ECDSAWalletFactory: "0x99fF73b9a62965E0A27f49C5Fe37E5F17A78a560",
-    SmartWalletFactory: "0xA0BAC90193566cB5158aB74e067997B9f28e17AD",
-    Depositor: "0x"
+    // ECDSAWalletFactory: "0x7Cc708b5175cf51aA87d90f85F77180e596638e8",
+    SmartWalletFactory: "0x6831823A1DD41BB3D1700306f953146C0F5C7e9C",
+    ECDSAWalletFactory: "0x7db8033a94b5F12ff34880D509e782220C2c40D4",
+    // SmartWalletFactory: "0xA0BAC90193566cB5158aB74e067997B9f28e17AD",
+    // '0x89b5B5d93245f543D53CC55923DF841349a65169'
+    Depositor: "0x",
+    Permit2: "0x89b5B5d93245f543D53CC55923DF841349a65169"
   },
   [ChainId.ZKSYNC_TESTNET]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.ZKSYNC]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.OPBNB_TESTNET]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.OPBNB]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.POLYGON_ZKEVM]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.POLYGON_ZKEVM_TESTNET]: {
     ECDSAWalletFactory: "0x4E06FBDb972F3473C4CD838156156F7B7dA0405D",
     SmartWalletFactory: "0x798e5A9A79f6229AB8792B5a98f2b49B1b3a3cF6",
-    Depositor: "0x2BAF15BA3A2d06C763C03e17C15B9370C3c73b12"
+    Depositor: "0x2BAF15BA3A2d06C763C03e17C15B9370C3c73b12",
+    Permit2: "0x"
   },
   [ChainId.ARBITRUM_ONE]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.ARBITRUM_GOERLI]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.ARBITRUM_SEPOLIA]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.SCROLL_SEPOLIA]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.LINEA]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.LINEA_TESTNET]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.BASE]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.BASE_TESTNET]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.BASE_SEPOLIA]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   },
   [ChainId.SEPOLIA]: {
     ECDSAWalletFactory: "0x",
     SmartWalletFactory: "0x",
-    Depositor: "0x"
+    Depositor: "0x",
+    Permit2: "0x"
   }
 };
 
@@ -517,18 +545,10 @@ var ClasicTrade = class {
     ).quotient;
     const universalRouterAddress = getUniversalRouterAddress(chainId);
     const smartRouterAddress = getSwapRouterAddress(chainId);
-    const permit2Address = getPermit2Address(chainId);
-    if (options.walletPermitOptions?.permit2TransferFrom) {
-      options.walletPermitOptions.permit2TransferFrom.permit.spender;
-      options.walletPermitOptions.permit2TransferFrom.permit.permitted.token;
-      if (this.tradeType === "SmartWalletTrade" /* SmartWalletTrade */ && options.hasApprovedPermit2) {
-        planner.addExternalUserOperation(
-          "APPROVE" /* APPROVE */,
-          [permit2Address, maxUint256],
-          inputToken
-        );
-      }
-    } else {
+    const permit2Address = "0x89b5B5d93245f543D53CC55923DF841349a65169";
+    if (options.isUsingPermit2 && this.tradeType === "SmartWalletTrade" /* SmartWalletTrade */ && options.hasApprovedPermit2) {
+      planner.addExternalUserOperation("APPROVE" /* APPROVE */, [permit2Address, maxUint256], inputToken);
+    } else if (!options.isUsingPermit2) {
       const transferAmount = options.fees ? amountIn + options.fees.feeAmount.quotient : amountIn;
       if (!options.hasApprovedRelayer) {
         planner.addExternalUserOperation(
@@ -540,14 +560,6 @@ var ClasicTrade = class {
       planner.addUserOperation(
         "TRANSFER_FROM" /* TRANSFER_FROM */,
         [account2, smartWalletDetails.address, transferAmount],
-        inputToken
-      );
-    }
-    if (options.SmartWalletTradeType === "SmartWalletTrade" /* SmartWalletTrade */ && options.fees) {
-      console.log("am making it");
-      planner.addUserOperation(
-        "TRANSFER" /* TRANSFER */,
-        [signer.address, options.fees.feeAmount.quotient],
         inputToken
       );
     }
@@ -568,55 +580,98 @@ var ClasicTrade = class {
 var smartWalletFactoryAbi = [
   {
     inputs: [
-      {
-        internalType: "contract SmartWalletFactory",
-        name: "_factory",
-        type: "address"
-      }
+      { internalType: "contract SmartWalletFactory", name: "_factory", type: "address" },
+      { internalType: "address", name: "_permit2", type: "address" }
     ],
     stateMutability: "nonpayable",
     type: "constructor"
   },
   {
+    anonymous: false,
     inputs: [
-      {
-        internalType: "address",
-        name: "_owner",
-        type: "address"
-      }
+      { indexed: true, internalType: "address", name: "previousOwner", type: "address" },
+      { indexed: true, internalType: "address", name: "newOwner", type: "address" }
     ],
+    name: "OwnershipTransferred",
+    type: "event"
+  },
+  {
+    inputs: [],
+    name: "PERMIT2",
+    outputs: [{ internalType: "contract IPermit2", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "_owner", type: "address" }],
     name: "createWallet",
-    outputs: [
-      {
-        internalType: "contract IWallet",
-        name: "",
-        type: "address"
-      }
-    ],
+    outputs: [{ internalType: "contract IWallet", name: "", type: "address" }],
     stateMutability: "payable",
     type: "function"
   },
   {
     inputs: [
+      { internalType: "uint256", name: "_amount", type: "uint256" },
+      { internalType: "address", name: "_token", type: "address" },
+      { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "address", name: "_user", type: "address" },
       {
-        internalType: "address",
-        name: "_owner",
-        type: "address"
+        components: [
+          {
+            components: [
+              { internalType: "address", name: "token", type: "address" },
+              { internalType: "uint256", name: "amount", type: "uint256" }
+            ],
+            internalType: "struct ISignatureTransfer.TokenPermissions",
+            name: "permitted",
+            type: "tuple"
+          },
+          { internalType: "uint256", name: "nonce", type: "uint256" },
+          { internalType: "uint256", name: "deadline", type: "uint256" }
+        ],
+        internalType: "struct ISignatureTransfer.PermitTransferFrom",
+        name: "_permit",
+        type: "tuple"
       },
-      {
-        internalType: "uint256",
-        name: "_nonce",
-        type: "uint256"
-      }
+      { internalType: "bytes", name: "_signature", type: "bytes" }
+    ],
+    name: "deposit",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  { inputs: [], name: "renounceOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [
+      { internalType: "address", name: "", type: "address" },
+      { internalType: "address", name: "", type: "address" }
+    ],
+    name: "tokenBalancesByUser",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "uint256", name: "_nonce", type: "uint256" }
     ],
     name: "walletAddress",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address"
-      }
-    ],
+    outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function"
   }
@@ -1014,9 +1069,6 @@ var _SmartWalletRouter = class _SmartWalletRouter {
   }
   static buildSmartWalletTrade(trade, options) {
     this.tradeConfig = { ...options, ...trade };
-    if (options.SmartWalletTradeType === "SmartWalletTrade" /* SmartWalletTrade */ && !options.fees) {
-      throw new Error("Fee Object must be provided with smart wallet trade");
-    }
     const planner = new WalletOperationBuilder();
     const tradeCommand = new ClasicTrade(trade, options);
     tradeCommand.encode(planner);
@@ -1030,16 +1082,33 @@ var _SmartWalletRouter = class _SmartWalletRouter {
     const { userOps, externalUserOps } = planner;
     const { address, nonce } = config.smartWalletDetails;
     const smartWalletTypedData = typedMetaTx(userOps, nonce, address, config.chainId);
+    const permitSpender = Deployments[config.chainId].ECDSAWalletFactory;
     const permit2TypedData = permit2TpedData(
       config.chainId,
-      config.token,
-      signer.address,
-      address,
+      userOps[0].to,
+      permitSpender,
       signer.address,
       config.amount,
-      0n
+      14n
+      // get correct nonce on FE
     );
     return { permitDetails: permit2TypedData, smartWalletDetails: smartWalletTypedData, externalUserOps };
+  }
+  static appendPermit2UserOp(signature, account2, permit2TypedData) {
+    const permitPlanner = new WalletOperationBuilder();
+    permitPlanner.addUserOperation(
+      "PERMIT2_TRANSFER_TO_RELAYER_WITNESS" /* PERMIT2_TRANSFER_TO_RELAYER_WITNESS */,
+      [
+        BigInt(permit2TypedData.values.permitted.amount),
+        permit2TypedData.values.permitted.token,
+        signer.address,
+        account2,
+        permit2TypedData.permit,
+        signature
+      ],
+      permit2TypedData.values.spender
+    );
+    return permitPlanner;
   }
   static async sendTransactionFromRelayer(chainId, txConfig, config) {
     const asyncClient = getPublicClient({ chainId });
@@ -1049,18 +1118,21 @@ var _SmartWalletRouter = class _SmartWalletRouter {
       throw new AccountNotFoundError();
     const account2 = parseAccount(client.account);
     try {
-      const gas = await asyncClient.estimateGas({
+      const gasPrice = await asyncClient.getGasPrice();
+      const gasE = await asyncClient.estimateGas({
         to: txConfig.to,
         value: txConfig.amount,
         data: txConfig.data,
         account: account2
+        // gas: 20000,
       });
       const tradeMeta = await client.prepareTransactionRequest({
         to: txConfig.to,
         value: txConfig.amount,
         data: txConfig.data,
         chain: bscTestnet,
-        gas: calculateGasMargin(gas),
+        gas: calculateGasMargin(gasE),
+        gasPrice,
         account: account2
       });
       const chainFormat = client.chain?.formatters?.transactionRequest?.format;
@@ -1106,7 +1178,7 @@ var _SmartWalletRouter = class _SmartWalletRouter {
     const basePriceInNative = basePriceInUsd && nativePriceInUsd ? nativePriceInUsd.multiply(basePriceInUsd.invert()) : void 0;
     let tradeGasEstimation = trade?.gasEstimate ?? trade?.gasUseEstimate ?? 0n;
     const contract = getErc20Contract(97, trade.inputAmount.currency.wrapped.address);
-    if (options.walletPermitOptions) {
+    if (options.isUsingPermit2) {
       await contract.estimateGas.transferFrom([address, options.smartWalletDetails.address, 0n], { account: signer.address }).then((gas) => {
         tradeGasEstimation += gas;
       }).catch((e) => {

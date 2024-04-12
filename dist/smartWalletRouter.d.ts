@@ -1,9 +1,11 @@
 import type { ChainId } from "@pancakeswap/chains";
-import { CurrencyAmount, Token, type Currency, type TradeType } from "@pancakeswap/sdk";
+import { PermitTransferFromData } from "@pancakeswap/permit2-sdk";
+import { CurrencyAmount, type Token, type Currency, type TradeType } from "@pancakeswap/sdk";
 import { type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
 import { type PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
 import { type Address, type Hex, type PublicClient } from "viem";
 import { WalletOperationBuilder } from "./encoder/walletOperations";
+import { PermitWithWithWitness } from "./permit/permit2TypedData";
 import type { ClassicTradeOptions, SmartWalletGasParams, SmartWalletTradeOptions, UserOp } from "./types/smartWallet";
 export declare abstract class SmartWalletRouter {
     static account: Address;
@@ -18,7 +20,7 @@ export declare abstract class SmartWalletRouter {
         value: `0x${string}`;
     };
     static buildSmartWalletTrade(trade: SmartRouterTrade<TradeType>, options: SmartWalletTradeOptions): {
-        permitDetails: Promise<import("@pancakeswap/permit2-sdk").PermitTransferFromData & import("./permit/permit2TypedData").PermitWithWithWitness>;
+        permitDetails: PermitTransferFromData & PermitWithWithWitness;
         smartWalletDetails: import("./types/eip712").TypedSmartWalletData;
         externalUserOps: any[];
     };
@@ -26,10 +28,11 @@ export declare abstract class SmartWalletRouter {
         token: Address;
         amount: bigint;
     }): {
-        permitDetails: Promise<import("@pancakeswap/permit2-sdk").PermitTransferFromData & import("./permit/permit2TypedData").PermitWithWithWitness>;
+        permitDetails: PermitTransferFromData & PermitWithWithWitness;
         smartWalletDetails: import("./types/eip712").TypedSmartWalletData;
         externalUserOps: any[];
     };
+    static appendPermit2UserOp(signature: Hex, account: Address, permit2TypedData: PermitTransferFromData & PermitWithWithWitness): WalletOperationBuilder;
     static sendTransactionFromRelayer(chainId: ChainId, txConfig: UserOp, config?: {
         externalClient?: PublicClient;
     }): Promise<import("viem").TransactionReceipt>;

@@ -9,14 +9,14 @@ const defaultAccounts = ["22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07de
 const config: HardhatUserConfig = {
       networks: {
             hardhat: {
-                  // forking: {
-                  //       enabled: true,
-                  //       url: "https://eth.llamarpc.com",
-                  //       blockNumber: 19595025,
-                  // },
+                  forking: {
+                        enabled: true,
+                        url: "https://eth.llamarpc.com",
+                        blockNumber: 19595025,
+                  },
                   gas: 3000000,
                   // url: "http://127.0.0.1:8545",
-                  chainId: 31337,
+                  // chainId: 31337,
             },
             catalogMainnet: {
                   url: "https://rpc.catalog.fi/testnet",
@@ -103,7 +103,7 @@ const config: HardhatUserConfig = {
                   accounts: defaultAccounts,
             },
             bnbTestnet: {
-                  url: "https://data-seed-prebsc-1-s2.binance.org:8545/",
+                  url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
                   accounts: defaultAccounts,
             },
             moonbeamMainnet: {

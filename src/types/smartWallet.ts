@@ -26,6 +26,7 @@ export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOpt
             feeTokenAddress: Address;
             feeAmount: CurrencyAmount<Currency>;
       };
+      isUsingPermit2: boolean;
       walletPermitOptions?: SmartWalletPermitOptions;
       smartWalletDetails: { address: Address; nonce: bigint };
       SmartWalletTradeType: RouterTradeType;

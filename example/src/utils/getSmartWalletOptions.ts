@@ -26,6 +26,7 @@ export interface SmartWalletTradeOptions
     feeTokenAddress: Address;
     feeAmount: CurrencyAmount<Currency>;
   };
+  isUsingPermit2: boolean;
   walletPermitOptions?: never;
   smartWalletDetails: { address: Address; nonce: bigint };
   SmartWalletTradeType: string;
@@ -34,6 +35,7 @@ export interface SmartWalletTradeOptions
 
 export const getSmartWalletOptions = (
   address: Address,
+  isUsingPermit2: boolean,
   allowance: {
     permit2Allowances: {
       allowance: bigint;
@@ -55,6 +57,7 @@ export const getSmartWalletOptions = (
     SmartWalletTradeType: "SmartWalletTrade",
     router: "SmartRouter",
     fees,
+    isUsingPermit2: isUsingPermit2,
     hasApprovedPermit2: allowance.permit2Allowances.needsApproval,
     hasApprovedRelayer: allowance.smartWalletAllowances.needsApproval,
     walletPermitOptions: undefined,

@@ -1,4 +1,3 @@
-import { getPermit2Address } from "@pancakeswap/permit2-sdk";
 import type { ChainId, TradeType } from "@pancakeswap/sdk";
 import { SmartRouter, SwapRouter, type SmartRouterTrade } from "@pancakeswap/smart-router";
 import { maxUint256, type Address } from "viem";
@@ -44,31 +43,15 @@ export class ClasicTrade implements Command {
 
             const universalRouterAddress = getUniversalRouterAddress(chainId);
             const smartRouterAddress = getSwapRouterAddress(chainId);
-            const permit2Address = getPermit2Address(chainId);
+            const permit2Address = "0x89b5B5d93245f543D53CC55923DF841349a65169";
 
-            if (options.walletPermitOptions?.permit2TransferFrom) {
-                  const permitSpender = options.walletPermitOptions.permit2TransferFrom.permit.spender;
-                  const permitToken = options.walletPermitOptions.permit2TransferFrom.permit.permitted.token;
-
-                  if (this.tradeType === RouterTradeType.SmartWalletTrade && options.hasApprovedPermit2) {
-                        planner.addExternalUserOperation(
-                              OperationType.APPROVE,
-                              [permit2Address, maxUint256],
-                              inputToken,
-                        );
-                  }
-
-                  // planner.addExternalUserOperation(OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS, [
-                  //       amountIn,
-                  //       permitToken as Address,
-                  //       account,
-                  //       permitSpender as Address,
-                  //       permit, // to add
-                  //       permitSignature, // to do add
-                  // ]);
-                  // planner.addExternalUserOperation(OperationType.CLAIM_PERMIT, [permitToken, amountIn], permitToken);
-                  // planner.addExternalUserOperation(OperationType.TRANSFER, [routerRecipient, amountIn], permitToken);
-            } else {
+            if (
+                  options.isUsingPermit2 &&
+                  this.tradeType === RouterTradeType.SmartWalletTrade &&
+                  options.hasApprovedPermit2
+            ) {
+                  planner.addExternalUserOperation(OperationType.APPROVE, [permit2Address, maxUint256], inputToken);
+            } else if (!options.isUsingPermit2) {
                   // only can support same currency transfers as of now
                   const transferAmount = options.fees ? amountIn + options.fees.feeAmount.quotient : amountIn;
 
@@ -83,14 +66,6 @@ export class ClasicTrade implements Command {
                   planner.addUserOperation(
                         OperationType.TRANSFER_FROM,
                         [account, smartWalletDetails.address, transferAmount],
-                        inputToken,
-                  );
-            }
-            if (options.SmartWalletTradeType === RouterTradeType.SmartWalletTrade && options.fees) {
-                  console.log("am making it");
-                  planner.addUserOperation(
-                        OperationType.TRANSFER,
-                        [signer.address, options.fees.feeAmount.quotient],
                         inputToken,
                   );
             }

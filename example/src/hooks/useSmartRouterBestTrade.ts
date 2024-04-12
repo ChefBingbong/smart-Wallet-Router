@@ -55,7 +55,7 @@ export const useSmartRouterBestTrade = <selectData = GetTradeQuoteReturnType>(
 ) => {
   const { chainId, fromAsset, toAsset, amount, account } = parameters;
 
-  const deferQuotientRaw = useDeferredValue(amount?.quotient.toString());
+  const deferQuotientRaw = useDeferredValue(amount.quotient.toString());
   const deferQuotient = useDebounce(deferQuotientRaw, 500);
 
   return useQuery({
@@ -74,8 +74,7 @@ export const useSmartRouterBestTrade = <selectData = GetTradeQuoteReturnType>(
 
       if (!params.amount || !params.fromAsset || !params.toAsset)
         return undefined;
-      if (!toAsset || !fromAsset || !deferQuotient || !chainId)
-        return undefined;
+      if (!toAsset || !fromAsset || !amount || !chainId) return undefined;
 
       const quoteProvider = SmartRouter.createQuoteProvider({
         onChainProvider: () => publicClient({ chainId }) as never,
@@ -100,7 +99,7 @@ export const useSmartRouterBestTrade = <selectData = GetTradeQuoteReturnType>(
       const pools = [...v2Pools, ...v3Pools];
 
       const deferAmount = CurrencyAmount.fromRawAmount(
-        fromAsset,
+        amount?.currency,
         deferQuotient,
       );
       const res = await SmartRouter.getBestTrade(

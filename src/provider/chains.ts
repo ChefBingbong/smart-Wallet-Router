@@ -89,8 +89,6 @@ export const PUBLIC_NODES = {
       [ChainId.SEPOLIA]: sepolia.rpcUrls.default.http,
       [ChainId.ARBITRUM_SEPOLIA]: arbitrumSepolia.rpcUrls.default.http,
       [ChainId.BASE_SEPOLIA]: baseSepolia.rpcUrls.default.http,
-      [ExtendedChainId.POLYGON_TESTNET]: [ "https://rpc.ankr.com/polygon_mumbai"],
-      [ExtendedChainId.LOCAL]: [ "http://127.0.0.1:8545/"],
-
-
-} satisfies Record<ChainId | ExtendedChainId, readonly string[]>
+      [ExtendedChainId.POLYGON_TESTNET]: ["https://rpc.ankr.com/polygon_mumbai"],
+      [ExtendedChainId.LOCAL]: ["http://127.0.0.1:8545/"],
+} satisfies Record<ChainId | ExtendedChainId, readonly string[]>;

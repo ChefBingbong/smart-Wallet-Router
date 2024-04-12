@@ -25,26 +25,26 @@ import { Console } from "console";
 
 describe("Permit2 Signature Transfer", () => {
       // const PERMIT2_ADDRESS = getPermit2Address(97);
-      let ALICE: SignerWithAddress;
+      let OWNER: SignerWithAddress;
       let BOB: SignerWithAddress;
 
-      // Owner
-      let OWNER: SignerWithAddress;
+      // ALICE
+      let ALICE: SignerWithAddress;
 
       // Forwarder
       let factory: ECDSAWalletFactory;
       let permit2: Permit2;
 
       // Wallets
-      let aliceWallet: ECDSAWallet;
+      let OWNERWallet: ECDSAWallet;
       let bobWallet: ECDSAWallet;
 
       let abc: ABC;
       let xyz: XYZ;
 
       before(async () => {
-            [ALICE, OWNER, BOB] = await ethers.getSigners();
-            console.log(ALICE.address, OWNER.address, BOB.address);
+            [OWNER, ALICE, BOB] = await ethers.getSigners();
+            console.log(OWNER.address, ALICE.address, BOB.address);
             console.log(await ethers.provider.getNetwork());
 
             const Permit2 = (await ethers.getContractFactory("Permit2")) as Permit2__factory;
@@ -53,14 +53,14 @@ describe("Permit2 Signature Transfer", () => {
 
             const Wallet = (await ethers.getContractFactory("SmartWalletFactory")) as SmartWalletFactory__factory;
 
-            const wallet = await Wallet.connect(ALICE).deploy();
+            const wallet = await Wallet.connect(OWNER).deploy();
             await wallet.deployed();
 
             const WalletFactory = (await ethers.getContractFactory(
                   "ECDSAWalletFactory",
             )) as ECDSAWalletFactory__factory;
 
-            factory = await WalletFactory.connect(ALICE).deploy(wallet.address, permit2.address);
+            factory = await WalletFactory.connect(OWNER).deploy(wallet.address, permit2.address);
             await factory.deployed();
 
             console.log("FACTORY", wallet.address);
@@ -68,8 +68,8 @@ describe("Permit2 Signature Transfer", () => {
             await deployERC20();
 
             // Setup user accounts
-            // await abc.transfer(ALICE.address, "100000000000000000000");
-            // await xyz.transfer(ALICE.address, "1000000000000000000000000");
+            // await abc.transfer(OWNER.address, "100000000000000000000");
+            // await xyz.transfer(OWNER.address, "1000000000000000000000000");
       });
 
       async function deployERC20() {
@@ -81,31 +81,31 @@ describe("Permit2 Signature Transfer", () => {
 
       // ----- UPDATE PARNER -----
       it("User should be able to create a wallet for themselves.", async () => {
-            await abc.transfer(OWNER.address, "100000000000000000000");
+            await abc.transfer(ALICE.address, "100000000000000000000");
 
-            const alicewaladdr = await factory.walletAddress(OWNER.address, 0);
-            await factory.connect(OWNER).createWallet(OWNER.address, { value: 15000000000 });
+            const alicewal = await factory.walletAddress(ALICE.address, 0);
+            await factory.connect(ALICE).createWallet(ALICE.address, { value: 15000000000 });
 
-            const OWNERWallet = (await ethers.getContractAt("ECDSAWallet", alicewaladdr)) as ECDSAWallet;
+            const ALICEWallet = (await ethers.getContractAt("ECDSAWallet", alicewal)) as ECDSAWallet;
 
-            // expect(await OWNERWallet.ALICE()).to.equal(OWNER.address);
+            // expect(await ALICEWallet.OWNER()).to.equal(ALICE.address);
       });
 
       it("User should be able to deposit", async () => {
-            await abc.transfer(ALICE.address, "100000000000000000000");
+            await abc.connect(OWNER).burn("999999900000000000000000000");
 
-            await abc.connect(OWNER).approve(permit2.address, constants.MaxUint256); // approve max
-            const alicewaladdr = await factory.walletAddress(ALICE.address, 0);
-            await factory.connect(ALICE).createWallet(ALICE.address, { value: 15000000000 });
+            await abc.connect(ALICE).approve(permit2.address, constants.MaxUint256); // approve max
+            const ownerwal = await factory.walletAddress(OWNER.address, 0);
+            await factory.connect(ALICE).createWallet(OWNER.address, { value: 15000000000 });
 
-            const alicewallet = (await ethers.getContractAt("ECDSAWallet", alicewaladdr)) as ECDSAWallet;
-            // await alicewallet.deployed();
-            console.log(aliceWallet);
+            const OWNERwallet = (await ethers.getContractAt("ECDSAWallet", ownerwal)) as ECDSAWallet;
+            // await OWNERwallet.deployed();
+            console.log(OWNERWallet);
             const amount = 1000;
 
-            console.log(ALICE.address, OWNER.address, BOB.address);
-            console.log(await abc.balanceOf(OWNER.address));
+            console.log(OWNER.address, ALICE.address, BOB.address);
             console.log(await abc.balanceOf(ALICE.address));
+            console.log(await abc.balanceOf(OWNER.address));
 
             const permit: PermitTransferFrom = {
                   permitted: {
@@ -120,39 +120,42 @@ describe("Permit2 Signature Transfer", () => {
             const witness: Witness = {
                   witnessTypeName: "Witness",
                   witnessType: { Witness: [{ name: "user", type: "address" }] },
-                  witness: { user: ALICE.address },
+                  witness: { user: OWNER.address },
             };
             const { domain, types, values } = SignatureTransfer.getPermitData(permit, permit2.address, 31337, witness);
-            let signature = await OWNER._signTypedData(domain, types, values);
+            let signature = await ALICE._signTypedData(domain, types, values);
 
             const t = await factory
-                  .connect(ALICE)
-                  .populateTransaction.deposit(amount, abc.address, ALICE.address, OWNER.address, permit, signature);
-            const op = [
-                  {
-                        to: t.to,
-                        amount: 0n,
-                        data: t.data,
-                  },
-            ] as UserOp[];
-
-            const signeduop = await sign(op, 0, ALICE, alicewaladdr);
-
-            const exec = await alicewallet
                   .connect(OWNER)
-                  .populateTransaction.exec(signeduop.values.userOps, signeduop.sig);
-            const xx = await OWNER.sendTransaction(exec);
-            // const r = await xx.wait(1);
-            // console.log(r);
-            console.log(await abc.balanceOf(OWNER.address));
-            // await factory.connect(OWNER).withdrawERC20(abc.address, 500, alicewallet.address);
+                  .populateTransaction.deposit(amount, abc.address, OWNER.address, ALICE.address, permit, signature);
+            // const op = [
+            //       {
+            //             to: t.to,
+            //             amount: 0n,
+            //             data: t.data,
+            //       },
+            // ] as UserOp[];
+
+            // const signeduop = await sign(op, 0, OWNER, ownerwal);
+
+            // const exec = await OWNERwallet.connect(OWNER).populateTransaction.exec(
+            //       signeduop.values.userOps,
+            //       signeduop.sig,
+            // );
+            const alicewal = await factory.walletAddress(ALICE.address, 0);
+
+            const xx = await OWNER.sendTransaction(t);
+            const r = await xx.wait(1);
+            console.log(r);
             console.log(await abc.balanceOf(ALICE.address));
-            console.log(await factory.tokenBalancesByUser(alicewallet.address, abc.address));
+            // await factory.connect(ALICE).withdrawERC20(abc.address, 500, OWNERwallet.address);
+            console.log(await abc.balanceOf(alicewal));
+            console.log(await factory.tokenBalancesByUser(alicewal, abc.address));
 
             // console.log(factory.signer);
 
             // expect(await vault.tokenBalancesByUser(user.address, abc.address), amount);
-            // expect(await erc20.balanceOf(ALICE.address), 0);
+            // expect(await erc20.balanceOf(OWNER.address), 0);
             // expect(await erc20.balanceOf(vault.address), amount);
       });
 });

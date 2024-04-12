@@ -2,6 +2,24 @@ import { type Address } from "viem";
 import type { ChainId } from "@pancakeswap/chains";
 export declare const getSmartWalletFactory: (chainId: ChainId) => {
     read: {
+        owner: (options?: {
+            account?: `0x${string}` | import("viem").Account | undefined;
+            blockNumber?: bigint | undefined;
+            blockTag?: import("viem").BlockTag | undefined;
+            stateOverride?: import("viem").StateOverride | undefined;
+        } | undefined) => Promise<`0x${string}`>;
+        PERMIT2: (options?: {
+            account?: `0x${string}` | import("viem").Account | undefined;
+            blockNumber?: bigint | undefined;
+            blockTag?: import("viem").BlockTag | undefined;
+            stateOverride?: import("viem").StateOverride | undefined;
+        } | undefined) => Promise<`0x${string}`>;
+        tokenBalancesByUser: (args: readonly [`0x${string}`, `0x${string}`], options?: {
+            account?: `0x${string}` | import("viem").Account | undefined;
+            blockNumber?: bigint | undefined;
+            blockTag?: import("viem").BlockTag | undefined;
+            stateOverride?: import("viem").StateOverride | undefined;
+        } | undefined) => Promise<bigint>;
         walletAddress: (args: readonly [`0x${string}`, bigint], options?: {
             account?: `0x${string}` | import("viem").Account | undefined;
             blockNumber?: bigint | undefined;
@@ -15,9 +33,38 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -31,6 +78,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -51,15 +194,556 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             readonly stateMutability: "view";
             readonly type: "function";
         }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        deposit: (args: readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        renounceOwnership: (options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        transferOwnership: (args: readonly [`0x${string}`], options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
     } & {
         createWallet: (args: readonly [`0x${string}`], options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
             readonly inputs: readonly [{
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -73,6 +757,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -93,6 +873,518 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             readonly stateMutability: "view";
             readonly type: "function";
         }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        deposit: (args: readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        renounceOwnership: (options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
+        transferOwnership: (args: readonly [`0x${string}`], options: import("viem/chains").Prettify<import("viem").UnionOmit<import("viem").EstimateContractGasParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined>, "address" | "abi" | "args" | "functionName">>) => Promise<bigint>;
     };
     simulate: {
         createWallet: <TChainOverride extends import("viem").Chain | undefined, TAccountOverride extends `0x${string}` | import("viem").Account | undefined = undefined>(args: readonly [`0x${string}`], options?: Omit<import("viem").SimulateContractParameters<readonly [{
@@ -100,9 +1392,38 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -116,6 +1437,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -140,9 +1557,38 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -156,6 +1602,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -176,16 +1718,1598 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             readonly stateMutability: "view";
             readonly type: "function";
         }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride, TAccountOverride>>;
+        deposit: <TChainOverride_1 extends import("viem").Chain | undefined, TAccountOverride_1 extends `0x${string}` | import("viem").Account | undefined = undefined>(args: readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], options?: Omit<import("viem").SimulateContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined, TChainOverride_1, TAccountOverride_1>, "address" | "abi" | "args" | "functionName"> | undefined) => Promise<import("viem").SimulateContractReturnType<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_1, TAccountOverride_1>>;
+        renounceOwnership: <TChainOverride_2 extends import("viem").Chain | undefined, TAccountOverride_2 extends `0x${string}` | import("viem").Account | undefined = undefined>(options?: Omit<import("viem").SimulateContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined, TChainOverride_2, TAccountOverride_2>, "address" | "abi" | "args" | "functionName"> | undefined) => Promise<import("viem").SimulateContractReturnType<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined, undefined, TChainOverride_2, TAccountOverride_2>>;
+        transferOwnership: <TChainOverride_3 extends import("viem").Chain | undefined, TAccountOverride_3 extends `0x${string}` | import("viem").Account | undefined = undefined>(args: readonly [`0x${string}`], options?: Omit<import("viem").SimulateContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined, TChainOverride_3, TAccountOverride_3>, "address" | "abi" | "args" | "functionName"> | undefined) => Promise<import("viem").SimulateContractReturnType<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_3, TAccountOverride_3>>;
+    };
+    createEventFilter: {
+        OwnershipTransferred: <const TArgs extends {
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        } | undefined, TStrict extends boolean | undefined = undefined>(args: {
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        } | ({
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        } extends infer T ? T extends {
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        } ? T extends TArgs ? Readonly<TArgs> : never : never : never), options?: ({
+            fromBlock?: bigint | import("viem").BlockTag | undefined;
+            toBlock?: bigint | import("viem").BlockTag | undefined;
+        } & {
+            strict?: TStrict | undefined;
+        }) | undefined) => Promise<import("viem").CreateContractEventFilterReturnType<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "OwnershipTransferred", TArgs, TStrict>>;
+    };
+    getEvents: {
+        OwnershipTransferred: (args?: {
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        } | undefined, options?: {
+            blockHash?: `0x${string}` | undefined;
+            strict?: boolean | undefined;
+            fromBlock?: bigint | import("viem").BlockTag | undefined;
+            toBlock?: bigint | import("viem").BlockTag | undefined;
+        } | undefined) => Promise<import("viem").GetContractEventsReturnType<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "OwnershipTransferred">>;
+    };
+    watchEvent: {
+        OwnershipTransferred: (args: {
+            previousOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+            newOwner?: `0x${string}` | `0x${string}`[] | null | undefined;
+        }, options: {
+            batch?: boolean | undefined;
+            pollingInterval?: number | undefined;
+            strict?: boolean | undefined;
+            onError?: ((error: Error) => void) | undefined;
+            onLogs: import("viem").WatchContractEventOnLogsFn<readonly [{
+                readonly inputs: readonly [{
+                    readonly internalType: "contract SmartWalletFactory";
+                    readonly name: "_factory";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "address";
+                    readonly name: "_permit2";
+                    readonly type: "address";
+                }];
+                readonly stateMutability: "nonpayable";
+                readonly type: "constructor";
+            }, {
+                readonly anonymous: false;
+                readonly inputs: readonly [{
+                    readonly indexed: true;
+                    readonly internalType: "address";
+                    readonly name: "previousOwner";
+                    readonly type: "address";
+                }, {
+                    readonly indexed: true;
+                    readonly internalType: "address";
+                    readonly name: "newOwner";
+                    readonly type: "address";
+                }];
+                readonly name: "OwnershipTransferred";
+                readonly type: "event";
+            }, {
+                readonly inputs: readonly [];
+                readonly name: "PERMIT2";
+                readonly outputs: readonly [{
+                    readonly internalType: "contract IPermit2";
+                    readonly name: "";
+                    readonly type: "address";
+                }];
+                readonly stateMutability: "view";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "_owner";
+                    readonly type: "address";
+                }];
+                readonly name: "createWallet";
+                readonly outputs: readonly [{
+                    readonly internalType: "contract IWallet";
+                    readonly name: "";
+                    readonly type: "address";
+                }];
+                readonly stateMutability: "payable";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [{
+                    readonly internalType: "uint256";
+                    readonly name: "_amount";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "address";
+                    readonly name: "_token";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "address";
+                    readonly name: "_owner";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "address";
+                    readonly name: "_user";
+                    readonly type: "address";
+                }, {
+                    readonly components: readonly [{
+                        readonly components: readonly [{
+                            readonly internalType: "address";
+                            readonly name: "token";
+                            readonly type: "address";
+                        }, {
+                            readonly internalType: "uint256";
+                            readonly name: "amount";
+                            readonly type: "uint256";
+                        }];
+                        readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                        readonly name: "permitted";
+                        readonly type: "tuple";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "nonce";
+                        readonly type: "uint256";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "deadline";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                    readonly name: "_permit";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "bytes";
+                    readonly name: "_signature";
+                    readonly type: "bytes";
+                }];
+                readonly name: "deposit";
+                readonly outputs: readonly [];
+                readonly stateMutability: "nonpayable";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [];
+                readonly name: "owner";
+                readonly outputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "";
+                    readonly type: "address";
+                }];
+                readonly stateMutability: "view";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [];
+                readonly name: "renounceOwnership";
+                readonly outputs: readonly [];
+                readonly stateMutability: "nonpayable";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "address";
+                    readonly name: "";
+                    readonly type: "address";
+                }];
+                readonly name: "tokenBalancesByUser";
+                readonly outputs: readonly [{
+                    readonly internalType: "uint256";
+                    readonly name: "";
+                    readonly type: "uint256";
+                }];
+                readonly stateMutability: "view";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "newOwner";
+                    readonly type: "address";
+                }];
+                readonly name: "transferOwnership";
+                readonly outputs: readonly [];
+                readonly stateMutability: "nonpayable";
+                readonly type: "function";
+            }, {
+                readonly inputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "_owner";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "_nonce";
+                    readonly type: "uint256";
+                }];
+                readonly name: "walletAddress";
+                readonly outputs: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "";
+                    readonly type: "address";
+                }];
+                readonly stateMutability: "view";
+                readonly type: "function";
+            }], "OwnershipTransferred", undefined>;
+            poll?: true | undefined;
+        }) => import("viem").WatchContractEventReturnType;
     };
     write: {
-        createWallet: <TChainOverride_1 extends import("viem").Chain | undefined, Options extends import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+        createWallet: <TChainOverride_4 extends import("viem").Chain | undefined, Options extends import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
             readonly inputs: readonly [{
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -199,6 +3323,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -218,14 +3438,43 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             }];
             readonly stateMutability: "view";
             readonly type: "function";
-        }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_1>, "address" | "abi" | "args" | "functionName"> extends infer T ? { [K in keyof T]: import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+        }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_4>, "address" | "abi" | "args" | "functionName"> extends infer T_1 ? { [K in keyof T_1]: import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
             readonly inputs: readonly [{
                 readonly internalType: "contract SmartWalletFactory";
                 readonly name: "_factory";
                 readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
             }];
             readonly stateMutability: "nonpayable";
             readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
         }, {
             readonly inputs: readonly [{
                 readonly internalType: "address";
@@ -239,6 +3488,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
                 readonly type: "address";
             }];
             readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
             readonly type: "function";
         }, {
             readonly inputs: readonly [{
@@ -258,7 +3603,1021 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             }];
             readonly stateMutability: "view";
             readonly type: "function";
-        }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_1>, "address" | "abi" | "args" | "functionName">[K]; } : never>(args: readonly [`0x${string}`], options: Options) => Promise<`0x${string}`>;
+        }], "createWallet", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_4>, "address" | "abi" | "args" | "functionName">[K]; } : never>(args: readonly [`0x${string}`], options: Options) => Promise<`0x${string}`>;
+        deposit: <TChainOverride_5 extends import("viem").Chain | undefined, Options_1 extends import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_5>, "address" | "abi" | "args" | "functionName"> extends infer T_2 ? { [K_1 in keyof T_2]: import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "deposit", readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_5>, "address" | "abi" | "args" | "functionName">[K_1]; } : never>(args: readonly [bigint, `0x${string}`, `0x${string}`, `0x${string}`, {
+            permitted: {
+                token: `0x${string}`;
+                amount: bigint;
+            };
+            nonce: bigint;
+            deadline: bigint;
+        }, `0x${string}`], options: Options_1) => Promise<`0x${string}`>;
+        renounceOwnership: <TChainOverride_6 extends import("viem").Chain | undefined, Options_2 extends import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined, undefined, TChainOverride_6>, "address" | "abi" | "args" | "functionName"> extends infer T_3 ? { [K_2 in keyof T_3]: import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "renounceOwnership", readonly [], import("viem").Chain | undefined, undefined, TChainOverride_6>, "address" | "abi" | "args" | "functionName">[K_2]; } : never>(options: Options_2) => Promise<`0x${string}`>;
+        transferOwnership: <TChainOverride_7 extends import("viem").Chain | undefined, Options_3 extends import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_7>, "address" | "abi" | "args" | "functionName"> extends infer T_4 ? { [K_3 in keyof T_4]: import("viem").UnionOmit<import("viem").WriteContractParameters<readonly [{
+            readonly inputs: readonly [{
+                readonly internalType: "contract SmartWalletFactory";
+                readonly name: "_factory";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_permit2";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "nonpayable";
+            readonly type: "constructor";
+        }, {
+            readonly anonymous: false;
+            readonly inputs: readonly [{
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "previousOwner";
+                readonly type: "address";
+            }, {
+                readonly indexed: true;
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "OwnershipTransferred";
+            readonly type: "event";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "PERMIT2";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IPermit2";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }];
+            readonly name: "createWallet";
+            readonly outputs: readonly [{
+                readonly internalType: "contract IWallet";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "payable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "_amount";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_token";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "_user";
+                readonly type: "address";
+            }, {
+                readonly components: readonly [{
+                    readonly components: readonly [{
+                        readonly internalType: "address";
+                        readonly name: "token";
+                        readonly type: "address";
+                    }, {
+                        readonly internalType: "uint256";
+                        readonly name: "amount";
+                        readonly type: "uint256";
+                    }];
+                    readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                    readonly name: "permitted";
+                    readonly type: "tuple";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "nonce";
+                    readonly type: "uint256";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "deadline";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+                readonly name: "_permit";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "bytes";
+                readonly name: "_signature";
+                readonly type: "bytes";
+            }];
+            readonly name: "deposit";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "owner";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [];
+            readonly name: "renounceOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }, {
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly name: "tokenBalancesByUser";
+            readonly outputs: readonly [{
+                readonly internalType: "uint256";
+                readonly name: "";
+                readonly type: "uint256";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "newOwner";
+                readonly type: "address";
+            }];
+            readonly name: "transferOwnership";
+            readonly outputs: readonly [];
+            readonly stateMutability: "nonpayable";
+            readonly type: "function";
+        }, {
+            readonly inputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "_owner";
+                readonly type: "address";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "_nonce";
+                readonly type: "uint256";
+            }];
+            readonly name: "walletAddress";
+            readonly outputs: readonly [{
+                readonly internalType: "address";
+                readonly name: "";
+                readonly type: "address";
+            }];
+            readonly stateMutability: "view";
+            readonly type: "function";
+        }], "transferOwnership", readonly [`0x${string}`], import("viem").Chain | undefined, undefined, TChainOverride_7>, "address" | "abi" | "args" | "functionName">[K_3]; } : never>(args: readonly [`0x${string}`], options: Options_3) => Promise<`0x${string}`>;
     };
     address: `0x${string}`;
     abi: readonly [{
@@ -266,9 +4625,38 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             readonly internalType: "contract SmartWalletFactory";
             readonly name: "_factory";
             readonly type: "address";
+        }, {
+            readonly internalType: "address";
+            readonly name: "_permit2";
+            readonly type: "address";
         }];
         readonly stateMutability: "nonpayable";
         readonly type: "constructor";
+    }, {
+        readonly anonymous: false;
+        readonly inputs: readonly [{
+            readonly indexed: true;
+            readonly internalType: "address";
+            readonly name: "previousOwner";
+            readonly type: "address";
+        }, {
+            readonly indexed: true;
+            readonly internalType: "address";
+            readonly name: "newOwner";
+            readonly type: "address";
+        }];
+        readonly name: "OwnershipTransferred";
+        readonly type: "event";
+    }, {
+        readonly inputs: readonly [];
+        readonly name: "PERMIT2";
+        readonly outputs: readonly [{
+            readonly internalType: "contract IPermit2";
+            readonly name: "";
+            readonly type: "address";
+        }];
+        readonly stateMutability: "view";
+        readonly type: "function";
     }, {
         readonly inputs: readonly [{
             readonly internalType: "address";
@@ -282,6 +4670,102 @@ export declare const getSmartWalletFactory: (chainId: ChainId) => {
             readonly type: "address";
         }];
         readonly stateMutability: "payable";
+        readonly type: "function";
+    }, {
+        readonly inputs: readonly [{
+            readonly internalType: "uint256";
+            readonly name: "_amount";
+            readonly type: "uint256";
+        }, {
+            readonly internalType: "address";
+            readonly name: "_token";
+            readonly type: "address";
+        }, {
+            readonly internalType: "address";
+            readonly name: "_owner";
+            readonly type: "address";
+        }, {
+            readonly internalType: "address";
+            readonly name: "_user";
+            readonly type: "address";
+        }, {
+            readonly components: readonly [{
+                readonly components: readonly [{
+                    readonly internalType: "address";
+                    readonly name: "token";
+                    readonly type: "address";
+                }, {
+                    readonly internalType: "uint256";
+                    readonly name: "amount";
+                    readonly type: "uint256";
+                }];
+                readonly internalType: "struct ISignatureTransfer.TokenPermissions";
+                readonly name: "permitted";
+                readonly type: "tuple";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "nonce";
+                readonly type: "uint256";
+            }, {
+                readonly internalType: "uint256";
+                readonly name: "deadline";
+                readonly type: "uint256";
+            }];
+            readonly internalType: "struct ISignatureTransfer.PermitTransferFrom";
+            readonly name: "_permit";
+            readonly type: "tuple";
+        }, {
+            readonly internalType: "bytes";
+            readonly name: "_signature";
+            readonly type: "bytes";
+        }];
+        readonly name: "deposit";
+        readonly outputs: readonly [];
+        readonly stateMutability: "nonpayable";
+        readonly type: "function";
+    }, {
+        readonly inputs: readonly [];
+        readonly name: "owner";
+        readonly outputs: readonly [{
+            readonly internalType: "address";
+            readonly name: "";
+            readonly type: "address";
+        }];
+        readonly stateMutability: "view";
+        readonly type: "function";
+    }, {
+        readonly inputs: readonly [];
+        readonly name: "renounceOwnership";
+        readonly outputs: readonly [];
+        readonly stateMutability: "nonpayable";
+        readonly type: "function";
+    }, {
+        readonly inputs: readonly [{
+            readonly internalType: "address";
+            readonly name: "";
+            readonly type: "address";
+        }, {
+            readonly internalType: "address";
+            readonly name: "";
+            readonly type: "address";
+        }];
+        readonly name: "tokenBalancesByUser";
+        readonly outputs: readonly [{
+            readonly internalType: "uint256";
+            readonly name: "";
+            readonly type: "uint256";
+        }];
+        readonly stateMutability: "view";
+        readonly type: "function";
+    }, {
+        readonly inputs: readonly [{
+            readonly internalType: "address";
+            readonly name: "newOwner";
+            readonly type: "address";
+        }];
+        readonly name: "transferOwnership";
+        readonly outputs: readonly [];
+        readonly stateMutability: "nonpayable";
         readonly type: "function";
     }, {
         readonly inputs: readonly [{

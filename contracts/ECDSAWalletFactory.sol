@@ -44,7 +44,7 @@ contract ECDSAWalletFactory is Ownable {
                   );
       }
 
-      function walletAddress(address _owner, uint256 _nonce) external view returns (address) {
+      function walletAddress(address _owner, uint256 _nonce) public view returns (address) {
             return
                   factory.walletAddress(
                         address(wallet),
@@ -72,8 +72,9 @@ contract ECDSAWalletFactory is Ownable {
                   _signature
             );
 
+            address userWallet = walletAddress(_user, 0);
             tokenBalancesByUser[_user][_token] -= _amount;
-            IERC20(_token).safeTransfer(_owner, _amount);
+            IERC20(_token).safeTransfer(userWallet, _amount);
       }
 
       function _increaseUserBalance(address _account, address _token, uint256 _amount) internal {
