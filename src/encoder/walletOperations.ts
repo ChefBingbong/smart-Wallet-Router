@@ -106,7 +106,7 @@ export const ABI_PARAMETER = {
 
       // SW PERMIT OPS
       [OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS]: parseAbiItem([
-            "function deposit(uint256 _amount, address _token, address _owner, address _user, PermitTransferFrom calldata _permit, bytes calldata _signature)",
+            "function deposit(uint256 _amount, uint256 _feeAmount, address _token, address _owner, address _user, PermitTransferFrom calldata _permit, bytes calldata _signature)",
             "struct PermitTransferFrom { TokenPermissions permitted; uint256 nonce; uint256 deadline; }",
             "struct TokenPermissions { address token; uint256 amount; }",
       ]),

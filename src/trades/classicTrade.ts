@@ -45,27 +45,28 @@ export class ClasicTrade implements Command {
             const smartRouterAddress = getSwapRouterAddress(chainId);
             const permit2Address = "0x89b5B5d93245f543D53CC55923DF841349a65169";
 
-            if (
-                  options.isUsingPermit2 &&
-                  this.tradeType === RouterTradeType.SmartWalletTrade &&
-                  options.hasApprovedPermit2
-            ) {
+            if (!options.hasApprovedPermit2 && this.tradeType === RouterTradeType.SmartWalletTradeWithPermit2) {
                   planner.addExternalUserOperation(OperationType.APPROVE, [permit2Address, maxUint256], inputToken);
-            } else if (!options.isUsingPermit2) {
-                  // only can support same currency transfers as of now
-                  const transferAmount = options.fees ? amountIn + options.fees.feeAmount.quotient : amountIn;
+            }
+            if (this.tradeType === RouterTradeType.SmartWalletTrade) {
+                  const feeAmount = options.fees?.feeAmount?.quotient as bigint;
+                  const amountWithFees = (amountIn + feeAmount) as bigint;
 
                   if (!options.hasApprovedRelayer) {
                         planner.addExternalUserOperation(
                               OperationType.APPROVE,
-                              [smartWalletDetails.address, transferAmount],
+                              [smartWalletDetails.address, amountWithFees],
                               inputToken,
                         );
                   }
-
                   planner.addUserOperation(
                         OperationType.TRANSFER_FROM,
-                        [account, smartWalletDetails.address, transferAmount],
+                        [account, signer.address, feeAmount],
+                        inputToken,
+                  );
+                  planner.addUserOperation(
+                        OperationType.TRANSFER_FROM,
+                        [account, smartWalletDetails.address, amountIn],
                         inputToken,
                   );
             }

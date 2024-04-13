@@ -4,6 +4,7 @@ import type { ChainId } from "@pancakeswap/chains";
 import { getPublicClient, getUserWalletClient, getWalletClient } from "../provider/walletClient";
 import { smartWalletFactoryAbi as factoryAbi } from "../abis/SmartWalletFactoryAbi";
 import { smartWalletAbi as walletAbi } from "../abis/SmartWalletAbi";
+import { nonceHelperAbi } from "../abis/NonceHelperAbi";
 
 export const getSmartWalletFactory = (chainId: ChainId) => {
       const client = getPublicClient({ chainId });
@@ -26,4 +27,10 @@ export const getUserErc20Contract = (chainId: ChainId, address: Address) => {
       const client = getPublicClient({ chainId });
       const walletClient = getUserWalletClient({ chainId });
       return getContract({ address, client: walletClient, abi: erc20Abi });
+};
+
+export const getNonceHelperContract = (chainId: ChainId) => {
+      const client = getPublicClient({ chainId });
+      const address = Deployments[chainId].NonceHelper;
+      return getContract({ address, client, abi: nonceHelperAbi });
 };

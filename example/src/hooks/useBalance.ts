@@ -8,7 +8,10 @@ import {
   useContractRead,
 } from "wagmi";
 
-export const useTokenBalance = (tokenAddress: Address, watch?: boolean) => {
+export const useTokenBalance = (
+  tokenAddress: Address,
+  overrideAddress?: Address,
+) => {
   const { address: account } = useAccount();
   const chainId = useChainId();
 
@@ -17,9 +20,9 @@ export const useTokenBalance = (tokenAddress: Address, watch?: boolean) => {
     abi: erc20ABI,
     address: tokenAddress,
     functionName: "balanceOf",
-    args: [account ?? "0x"],
-    enabled: !!account,
-    watch,
+    args: [overrideAddress ?? account ?? "0x"],
+    enabled: overrideAddress ? !!overrideAddress : !!account,
+    watch: true,
   });
 
   return {

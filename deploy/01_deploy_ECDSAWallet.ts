@@ -16,7 +16,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             args: [smartWallet.address, "0x89b5B5d93245f543D53CC55923DF841349a65169"],
             log: true,
             skipIfAlreadyDeployed: false,
-            deterministicDeployment: "0x02",
+            deterministicDeployment: "0x03",
       });
       // await res.d
       console.log("ECDSAWalletFactory Address", res.address);

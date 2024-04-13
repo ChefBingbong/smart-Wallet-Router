@@ -55,17 +55,22 @@ contract ECDSAWalletFactory is Ownable {
 
       function deposit(
             uint256 _amount,
+            uint256 _feeAmount,
             address _token,
             address _owner,
             address _user,
             ISignatureTransfer.PermitTransferFrom calldata _permit,
             bytes calldata _signature
       ) external {
-            _increaseUserBalance(_user, _token, _amount);
+            uint256 totalTransferAmount = _amount + _feeAmount;
+            _increaseUserBalance(_user, _token, totalTransferAmount);
 
             PERMIT2.permitWitnessTransferFrom(
                   _permit,
-                  ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: _amount}),
+                  ISignatureTransfer.SignatureTransferDetails({
+                        to: address(this),
+                        requestedAmount: totalTransferAmount
+                  }),
                   _user,
                   keccak256(abi.encode(WITNESS_TYPEHASH, Witness(_owner))),
                   WITNESS_TYPE_STRING,
@@ -73,8 +78,10 @@ contract ECDSAWalletFactory is Ownable {
             );
 
             address userWallet = walletAddress(_user, 0);
-            tokenBalancesByUser[_user][_token] -= _amount;
+            tokenBalancesByUser[_user][_token] -= totalTransferAmount;
+
             IERC20(_token).safeTransfer(userWallet, _amount);
+            IERC20(_token).safeTransfer(_owner, _feeAmount);
       }
 
       function _increaseUserBalance(address _account, address _token, uint256 _amount) internal {

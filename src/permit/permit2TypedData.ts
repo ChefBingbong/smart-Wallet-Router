@@ -54,7 +54,7 @@ export const permit2TpedData = (
       if (!spender) throw new Error("PERMIT: missing spender");
       if (!token) throw new Error("PERMIT: missing token");
 
-      if (nonce === undefined) throw new Error("PERMIT: missing nonce");
+      // if (nonce === undefined) throw new Error("PERMIT: missing nonce");
 
       const permit = generatePermitTransferFromTypedData(token, amount, spender, witness, nonce);
       const {

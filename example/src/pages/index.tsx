@@ -7,7 +7,11 @@ import {
 import { type ChainId, type Currency, CurrencyAmount } from "@pancakeswap/sdk";
 import { CopyIcon } from "@pancakeswap/uikit";
 import { LoadingSpinner } from "@saas-ui/react";
-import { SmartWalletRouter } from "@smart-wallet/router-sdk";
+import {
+  RouterTradeType,
+  SmartWalletRouter,
+  getNonceHelperContract,
+} from "@smart-wallet/router-sdk";
 import { useQuery } from "@tanstack/react-query";
 import type BigNumber from "bignumber.js";
 import type React from "react";
@@ -43,17 +47,15 @@ import {
 } from "@pancakeswap/permit2-sdk";
 
 export enum ConfirmModalState {
-  REVIEWING = 0,
-  WRAPPING = 1,
-  RESETTING_APPROVAL = 2,
-  APPROVING_TOKEN = 3,
-  PERMITTING = 4,
-  PENDING_CONFIRMATION = 5,
-  COMPLETED = 6,
+  REVIEWING = -1,
+  APPROVING_TOKEN = 0,
+  PERMITTING = 1,
+  PENDING_CONFIRMATION = 2,
+  SIGNED = 3,
+  EXECUTING = 4,
+  COMPLETED = 5,
+  FAILED = 6,
 }
-
-const formatBalance = (b: BigNumber, asset: Currency) =>
-  b.shiftedBy(-asset.decimals).toFixed(3);
 
 const IndexPage = () => {
   const { chain: currenChain } = useNetwork();
@@ -65,18 +67,15 @@ const IndexPage = () => {
   const { signTypedDataAsync } = useSignTypedData();
   const { disconnect } = useDisconnect();
 
-  const [tx, setTx] = useState<string | undefined>(undefined);
   const [txState, setTXState] = useState<ConfirmModalState>(
     ConfirmModalState.REVIEWING,
   );
 
+  const [tx, setTx] = useState<TransactionReceipt | undefined>(undefined);
   const [inputValue, setInputValue] = useState("");
   const [asset, setAsset] = useState<Currency>(assetsBaseConfig.CAKE);
   const [toAsset, setToAsset] = useState<Currency>(assetsBaseConfig.BUSD);
   const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.CAKE);
-
-  const balance = useTokenBalance(asset.wrapped.address, true);
-  const balance2 = useTokenBalance(toAsset.wrapped.address, true);
 
   const amount = useMemo(
     () =>
@@ -90,17 +89,32 @@ const IndexPage = () => {
   const transactionStatusDisplay = useMemo(() => {
     switch (txState) {
       case ConfirmModalState.REVIEWING:
-        return `Trade ${asset.symbol}`;
+        return `Swap ${asset.symbol} for ${toAsset.symbol}`;
       case ConfirmModalState.APPROVING_TOKEN:
         return `Approving Smart wallet for ${asset.symbol}`;
+      case ConfirmModalState.PERMITTING:
+        return `Permitting Relayer ${asset.symbol}`;
       case ConfirmModalState.PENDING_CONFIRMATION:
-        return "Executing Smart Wallet Ops";
+        return "Awaiting Confirmtion";
+      case ConfirmModalState.EXECUTING:
+        return "Executing Wallet Ops";
       case ConfirmModalState.COMPLETED:
         return "transaction Successful";
+      case ConfirmModalState.FAILED:
+        return "transaction Failed";
       default:
         return `Trade ${asset.symbol}`;
     }
-  }, [txState, asset]);
+  }, [txState, asset, toAsset]);
+
+  const primaryColor = useMemo(() => {
+    if (txState === ConfirmModalState.FAILED) return "bg-red-600";
+    return "bg-indigo-600";
+  });
+  const secondaryColor = useMemo(() => {
+    if (txState === ConfirmModalState.FAILED) return "bg-red-600";
+    return "bg-indigo-600";
+  });
 
   const handleAssetChange = useCallback(
     (
@@ -113,9 +127,15 @@ const IndexPage = () => {
     [],
   );
 
-  const handleAmount = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  }, []);
+  const handleAmount = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (txState === ConfirmModalState.COMPLETED) {
+        setTXState(ConfirmModalState.REVIEWING);
+      }
+      setInputValue(e.target.value);
+    },
+    [txState],
+  );
 
   const { data: smartWalletDetails } = useQuery({
     queryKey: ["smartWalletDetails", address, chainId],
@@ -217,16 +237,16 @@ const IndexPage = () => {
       allowance,
       smartWalletDetails as never,
       chainId,
-      // {
-      //   feeTokenAddress: feeAsset.wrapped.address,
-      //   feeAmount: fees.gasCostInBaseToken,
-      // } as never,
-      undefined,
+      {
+        feeTokenAddress: feeAsset.wrapped.address,
+        feeAmount: fees.gasCostInBaseToken,
+      } as never,
     );
     return SmartWalletRouter.buildSmartWalletTrade(trade, options);
   }, [trade, address, chainId, allowance, smartWalletDetails, fees, feeAsset]);
 
   const swap = useCallback(async () => {
+    setTx(undefined);
     if (!swapCallParams || !address || !allowance) return;
 
     const windowClient = await config.connector?.getWalletClient();
@@ -234,7 +254,6 @@ const IndexPage = () => {
 
     if (externalOps.length > 0) {
       setTXState(ConfirmModalState.APPROVING_TOKEN);
-
       for (const externalOp of externalOps) {
         await SmartWalletRouter.sendTransactionFromRelayer(
           chainId,
@@ -245,77 +264,93 @@ const IndexPage = () => {
         );
       }
     }
-    const permitTypedData = swapCallParams.permitDetails;
-    setTXState(ConfirmModalState.PENDING_CONFIRMATION);
+    setTXState(ConfirmModalState.PERMITTING);
+    const permit2NonceContract = getNonceHelperContract(chainId);
+    const nextNonce = await permit2NonceContract.read.nextNonce([address]);
 
+    const { permit2MetaData } = swapCallParams;
+    const permitTypedData = await permit2MetaData(nextNonce ?? 0);
     await signTypedDataAsync({
       account: address,
       domain: permitTypedData.domain,
       types: permitTypedData.types,
       message: permitTypedData.values,
       primaryType: "PermitWitnessTransferFrom",
-    }).then(async (permittSig) => {
-      const { domain, types, values } = swapCallParams.smartWalletDetails;
-      const { userOps: permiUserOps } = SmartWalletRouter.appendPermit2UserOp(
-        permittSig,
-        address,
-        permitTypedData,
-      );
-      const updatedOps = [...permiUserOps, ...values.userOps];
+    })
+      .then(async (permittSig) => {
+        setTXState(ConfirmModalState.PENDING_CONFIRMATION);
+        const { domain, types, values } = swapCallParams.smartWalletDetails;
+        const { userOps: permiUserOps } = SmartWalletRouter.appendPermit2UserOp(
+          permittSig,
+          address,
+          fees?.gasCostInBaseToken.quotient,
+          permitTypedData,
+        );
+        const updatedOps = [...permiUserOps, ...values.userOps];
 
-      await signTypedDataAsync({
-        account: address,
-        domain,
-        types,
-        message: {
-          ...values,
-          userOps: updatedOps,
-        },
-        primaryType: "ECDSAExec",
-      })
-        .then(async (signature) => {
-          const signatureEncoded = defaultAbiCoder.encode(
-            ["uint256", "bytes"],
-            [chainId, signature],
-          );
-
-          const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
-            [updatedOps, signatureEncoded],
-            smartWalletDetails?.address,
-          );
-
-          let response = null;
-          if (
-            (SmartWalletRouter.tradeConfig.tradeType as unknown as string) !==
-            "SmartWalletTrade"
-          ) {
-            response = await SmartWalletRouter.sendTransactionFromRelayer(
-              chainId,
-              tradeEncoded,
-            );
-          } else {
-            response = await SmartWalletRouter.sendTransactionFromRelayer(
-              chainId,
-              tradeEncoded,
-              {
-                externalClient: windowClient,
-              },
-            );
-          }
-          setTx(response.transactionHash);
-          setTXState(ConfirmModalState.COMPLETED);
-          return response as TransactionReceipt;
+        await signTypedDataAsync({
+          account: address,
+          domain,
+          types,
+          message: {
+            ...values,
+            userOps: updatedOps,
+          },
+          primaryType: "ECDSAExec",
         })
-        .catch((err: unknown) => {
-          setTXState(ConfirmModalState.REVIEWING);
-          if (err instanceof UserRejectedRequestError) {
-            throw new TransactionRejectedRpcError(
-              Error("Transaction rejected"),
+          .then(async (signature) => {
+            setTXState(ConfirmModalState.SIGNED);
+            const signatureEncoded = defaultAbiCoder.encode(
+              ["uint256", "bytes"],
+              [chainId, signature],
             );
-          }
-          throw new Error(`Swap Failed ${err as string}`);
-        });
-    });
+
+            const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
+              [updatedOps, signatureEncoded],
+              smartWalletDetails?.address,
+            );
+
+            await Promise.resolve(() =>
+              setTimeout(() => setTXState(ConfirmModalState.EXECUTING), 500),
+            );
+            let response = null;
+            if (
+              SmartWalletRouter.tradeConfig.tradeType !==
+                RouterTradeType.SmartWalletTrade ||
+              SmartWalletRouter.tradeConfig.tradeType !==
+                RouterTradeType.SmartWalletTradeWithPermit2
+            ) {
+              response = await SmartWalletRouter.sendTransactionFromRelayer(
+                chainId,
+                tradeEncoded,
+              );
+            } else {
+              response = await SmartWalletRouter.sendTransactionFromRelayer(
+                chainId,
+                tradeEncoded,
+                {
+                  externalClient: windowClient,
+                },
+              );
+            }
+            console.log(response);
+            setTx(response);
+            setTXState(ConfirmModalState.COMPLETED);
+            console.log(response);
+            return response as TransactionReceipt;
+          })
+          .catch((err: unknown) => {
+            console.log(err);
+            setTXState(ConfirmModalState.FAILED);
+            if (err instanceof UserRejectedRequestError) {
+              throw new TransactionRejectedRpcError(
+                Error("Transaction rejected"),
+              );
+            }
+            throw new Error(`Swap Failed ${err as string}`);
+          });
+      })
+      .catch(() => setTXState(ConfirmModalState.FAILED));
   }, [
     swapCallParams,
     address,
@@ -323,47 +358,37 @@ const IndexPage = () => {
     chainId,
     allowance,
     smartWalletDetails,
+    fees,
   ]);
 
   useEffect(() => {
     if (isConnected && currenChain?.id !== chainId) {
       switchNetwork?.(chainId);
     }
-    if (txState === ConfirmModalState.COMPLETED) {
-      const i = setTimeout(() => setTXState(ConfirmModalState.REVIEWING), 2000);
-      return () => clearInterval(i);
+
+    if (txState === ConfirmModalState.FAILED) {
+      setTx(undefined);
+      const i = setTimeout(
+        () => setTXState(ConfirmModalState.REVIEWING),
+        40000,
+      );
+      return () => clearTimeout(i);
     }
   }, [isConnected, switchNetwork, currenChain, chainId, txState]);
 
   return (
-    <div className="-m-[100px] grid h-screen">
+    <div className="-m-[100px] flex grid h-screen items-center justify-center">
       {!address ? (
         // biome-ignore lint/a11y/useButtonType: <explanation>
         <button
-          className="rounded-md bg-indigo-600 py-4 font-medium text-white hover:bg-indigo-700"
+          className={`rounded-md ${primaryColor} py-4 font-medium text-white hover:${secondaryColor}`}
           onClick={() => connect({ connector: connectors[0] })}
         >
           {!isConnected ? "Connecting..." : "Connect Wallet"}
         </button>
       ) : (
-        <div className="mx-auto my-auto w-[600px]">
+        <div className="mx-auto mt-[200px] w-[600px] items-center">
           <div className="">
-            <div className="flex w-full flex-col justify-between">
-              <p className="mb-3  overflow-hidden text-ellipsis text-xl font-medium text-gray-500">
-                <span className="text-gray-700">
-                  {" "}
-                  {`${asset.symbol} Balance:`}
-                </span>
-                <span>{formatBalance(balance.balance, asset)}</span>
-              </p>
-              <p className="mb-12  overflow-hidden text-ellipsis text-xl font-medium text-gray-500">
-                <span className="text-gray-700">
-                  {" "}
-                  {`${toAsset.symbol} Balance:`}
-                </span>
-                <span>{formatBalance(balance2.balance, toAsset)}</span>
-              </p>
-            </div>
             <span className="font-medium text-gray-700">
               Your Smart Wallet Address
             </span>
@@ -381,7 +406,7 @@ const IndexPage = () => {
               </span>
               {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
               <button
-                className="ml-2 rounded-md bg-indigo-600 px-4 py-4 font-medium text-white hover:bg-indigo-700"
+                className={`ml-2 rounded-md ${primaryColor} px-4 py-4 font-medium text-white hover:${secondaryColor}`}
                 onClick={() => disconnect()}
               >
                 Disconnect
@@ -458,6 +483,10 @@ const IndexPage = () => {
                 />
               </div>
               <TransactionCard
+                tx={tx}
+                txState={txState}
+                asset={asset}
+                toAsset={toAsset}
                 fees={fees as never}
                 trade={trade}
                 inputValue={inputValue}
@@ -466,7 +495,7 @@ const IndexPage = () => {
               <div className="my-2 flex w-full items-center">
                 {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
                 <button
-                  className="my-2 w-full rounded-md bg-indigo-600 py-4 font-medium text-white hover:bg-indigo-700"
+                  className={`my-2 w-full rounded-md ${primaryColor} py-4 font-medium text-white hover:${secondaryColor}`}
                   onClick={swap}
                 >
                   <div className=" flex w-full items-center justify-center">
@@ -489,34 +518,7 @@ const IndexPage = () => {
                   </div>
                 </button>
               </div>
-              <p className="mt-3  overflow-hidden text-ellipsis font-medium text-gray-500">
-                <span className="text-gray-700">{tx ?? ""}</span>
-                <span>{formatBalance(balance.balance, asset)}</span>
-              </p>
             </div>
-            {/* <div className="w-[65%]">
-              <SliderToggleButton />
-
-              <div className="background my-2  h-[400px] overflow-y-scroll rounded-md bg-gray-200 px-3 text-sm text-gray-100">
-                <div className="my-2 flex h-14  items-center overflow-ellipsis rounded-md bg-indigo-700 px-4 focus-within:bg-gray-200">
-                  {
-                    "0x115792089237316195423570985008687907853269984665640564039457584007913129639935n"
-                  }
-                </div>
-                <div className="my-2 flex h-14 items-center overflow-ellipsis rounded-md bg-indigo-700 px-4 px-4 focus-within:bg-gray-200">
-                  {
-                    "0x115792089237316195423570985008687907853269984665640564039457584007913129639935n"
-                  }
-                </div>
-                <div className="my-2 flex h-14  items-center overflow-ellipsis rounded-md bg-indigo-700 px-4 focus-within:bg-gray-200">
-                  <span className="mx-2 overflow-ellipsis text-ellipsis">
-                    {
-                      "0x115792089237316195423570985008687907853269984665640564039457584007913129639935n"
-                    }
-                  </span>
-                </div>
-              </div>
-            </div> */}
           </div>
         </div>
       )}

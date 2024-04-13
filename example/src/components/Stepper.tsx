@@ -12,6 +12,8 @@ import {
   StepSeparator,
   Flex,
 } from "@chakra-ui/react";
+import { ConfirmModalState } from "~/pages";
+import { useMemo } from "react";
 
 const steps = [
   {
@@ -34,25 +36,35 @@ const steps = [
     name: "step 5",
     title: "Execute Trade",
   },
-  {
-    name: "step 6",
-    title: "Execute Trade",
-  },
 ];
 
-export function TransactionBreakDownSteps() {
+export function TransactionBreakDownSteps({
+  txState,
+}: {
+  txState: ConfirmModalState;
+}) {
+  const step = useMemo(() => {
+    if (txState === ConfirmModalState.REVIEWING) return -1;
+    if (txState === ConfirmModalState.APPROVING_TOKEN) return 0;
+    if (txState === ConfirmModalState.PERMITTING) return 1;
+    if (txState === ConfirmModalState.PENDING_CONFIRMATION) return 2;
+    if (txState === ConfirmModalState.SIGNED) return 3;
+    if (txState === ConfirmModalState.EXECUTING) return 4;
+    if (txState === ConfirmModalState.COMPLETED) return 5;
+    return -1;
+  }, [txState]);
   return (
     <Steps
-      step={5}
-      // width="120%"
-      colorScheme="indigo"
-      color="indigo"
-      position="absolute"
+      step={step}
+      marginX={-5}
+      colorScheme="blue"
+      color="blue"
+      position="relative"
       left={1.5}
     >
       {steps.map((step, i) => (
         <StepsItem
-          position="relative"
+          //     position="relative"
           flexDirection="column"
           key={`${step.name}-index`}
           {...step}
@@ -61,7 +73,8 @@ export function TransactionBreakDownSteps() {
               <StepSeparator
                 style={{
                   position: "absolute",
-                  width: "90%",
+                  width: "85%",
+                  left: "35px",
                   height: "1px",
                   top: "48px",
                   background: "#6586df",

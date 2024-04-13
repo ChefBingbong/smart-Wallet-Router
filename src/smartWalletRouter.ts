@@ -20,7 +20,7 @@ import { getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient, signer } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
 import type { ClassicTradeOptions, SmartWalletGasParams, SmartWalletTradeOptions, UserOp } from "./types/smartWallet";
-import { getErc20Contract, getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
+import { getErc20Contract, getNonceHelperContract, getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
 import { AccountNotFoundError } from "./utils/error";
 import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
 import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
@@ -87,30 +87,39 @@ export abstract class SmartWalletRouter {
             const { address, nonce } = config.smartWalletDetails;
 
             const smartWalletTypedData = typedMetaTx(userOps, nonce, address, config.chainId);
-            const permitSpender = Deployments[config.chainId].ECDSAWalletFactory;
-            const permit2TypedData = permit2TpedData(
-                  config.chainId,
-                  userOps[0].to,
-                  permitSpender,
-                  signer.address,
-                  config.amount,
-                  14n, // get correct nonce on FE
-            );
 
-            return { permitDetails: permit2TypedData, smartWalletDetails: smartWalletTypedData, externalUserOps };
+            const permitSpender = Deployments[config.chainId].ECDSAWalletFactory;
+            const feeAmount = config.fees?.feeAmount?.quotient;
+            const amountWithFees = config.amount + feeAmount;
+
+            const permit2MetaData = async (nonce: bigint) => {
+                  return permit2TpedData(
+                        config.chainId,
+                        userOps[0].to,
+                        permitSpender,
+                        signer.address,
+                        amountWithFees,
+                        nonce,
+                  );
+            };
+            return { permit2MetaData, smartWalletDetails: smartWalletTypedData, externalUserOps };
       }
 
       public static appendPermit2UserOp(
             signature: Hex,
             account: Address,
+            tradeFee: bigint,
             permit2TypedData: PermitTransferFromData & PermitWithWithWitness,
       ) {
             const permitPlanner = new WalletOperationBuilder();
+            const transferAmount = permit2TypedData.values.permitted.amount;
+            const transferAmountRaw = BigInt(transferAmount) - tradeFee;
 
             permitPlanner.addUserOperation(
                   OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS,
                   [
-                        BigInt(permit2TypedData.values.permitted.amount),
+                        transferAmountRaw,
+                        tradeFee,
                         permit2TypedData.values.permitted.token as Address,
                         signer.address as Address,
                         account,
