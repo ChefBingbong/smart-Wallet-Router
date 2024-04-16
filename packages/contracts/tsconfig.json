@@ -1,0 +1,22 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"target": "es5",
+		"module": "commonjs",
+		"strict": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "dist",
+		"composite": true
+	},
+	"include": [
+		"hardhat.config.ts",
+		"./scripts",
+		"./deploy",
+		"./test",
+		"./src",
+		"typechain/**/*"
+	],
+	// "references": [{ "path": "../../tsconfig.node.json" }]
+}
