@@ -1,13 +1,7 @@
 import { ChainId } from "@pancakeswap/chains";
-import { Permit2ABI, PermitTransferFrom, SignatureTransfer, Witness } from "@pancakeswap/permit2-sdk";
+import { PermitTransferFrom, SignatureTransfer, Witness } from "@pancakeswap/permit2-sdk";
 import chalk from "chalk";
 import { ethers } from "ethers";
-// import BigNumber from 'b'
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 import { maxUint256, type Address } from "viem";
 import { Deployments, ExtendedChainId } from "../src/constants/deploymentUtils";
 import { PERMIT_SIG_EXPIRATION, toDeadline } from "../src/permit/permit2TypedData";
@@ -15,7 +9,6 @@ import { PUBLIC_NODES } from "../src/provider/chains";
 import { UserOp } from "../src/types/smartWallet";
 import { signTypedTx } from "../src/utils/typedMetaTx";
 import { ECDSAWalletFactory__factory, ECDSAWallet__factory, ERC20__factory } from "../typechain-types";
-import { getViemClient } from "../src/provider/client";
 
 export type SmartWalletConfig = {
       chainId: ChainId | ExtendedChainId;
@@ -42,41 +35,12 @@ async function main(config: SmartWalletConfig) {
             smartWalletSigner,
       );
       const PERMIT2_ADDRESS = "0x89b5B5d93245f543D53CC55923DF841349a65169";
-      // const userSmartWalletAddress = await smartWalletFactory
-      //       .connect(userWalletSigner)
-      //       .walletAddress(userWalletSigner.address, 0);
 
-      // console.log(
-      //       chainId,
-      //       smartWalletFactory.address,
-      //       userSmartWalletAddress,
-      //       Deployments[chainId].ECDSAWalletFactory,
-      //       smartWalletFactory,
-      // );
       const userSmartWalletAddress = await smartWalletFactory.walletAddress(userWalletSigner.address, 0n);
       const userSmartWallet = ECDSAWallet__factory.connect(userSmartWalletAddress, provider);
 
-      // // console.log(PERMIT2_ADDRESS);
-      // const client = getViemClient({ chainId });
-      // const allowance = await client.readContract({
-      //       functionName: "allowance",
-      //       args: [userWalletSigner.address, "0x501B55184813f7a29eb98DECD8EC9B6D07DEB263", smartWalletFactory.address],
-      //       address: PERMIT2_ADDRESS,
-      //       abi: Permit2ABI,
-      // });
-
-      // console.log(allowance);
-      // return;
-      // return;
-      // const userSmartWalletAddress = await smartWalletFactory.walletAddress(userWalletSigner.address, 0n);
-      // const userSmartWallet = ECDSAWallet__factory.connect(userSmartWalletAddress, provider);
-
-      // u;
-      console.log(userSmartWallet);
       const ERC20Asset = ERC20__factory.connect("0x501B55184813f7a29eb98DECD8EC9B6D07DEB263", provider);
-      // const PERMIT2_ADDRESS = getPermit2Address(config.chainId);
 
-      // const tc = await ERC20Asset.connect(userWalletSigner).approve(PERMIT2_ADDRESS, maxUint256); // approve max
       const tc = await ERC20Asset.connect(userWalletSigner).approve(PERMIT2_ADDRESS, maxUint256); // approve max
       await tc.wait(1);
       console.log(await smartWalletFactory.tokenBalancesByUser(userSmartWallet.address, ERC20Asset.address));
@@ -117,20 +81,19 @@ async function main(config: SmartWalletConfig) {
             witness,
       );
       let signature = await userWalletSigner._signTypedData(domain, types, values);
-      // const signature = await us._signTypedData(domain, types, value);
-      // const signatureEncoded = defaultAbiCoder.encode(["uint256", "bytes"], [97, signature]);
 
       const gasPrice = await userWalletSigner.getGasPrice();
-      const gas = await smartWalletFactory.connect(smartWalletSigner).estimateGas.deposit(
-            amount,
-            fee,
-            ERC20Asset.address,
-            smartWalletSigner.address,
-            userWalletSigner.address,
-            permit,
-            signature,
-            // { gasLimit: 20000 },
-      );
+      const gas = await smartWalletFactory
+            .connect(smartWalletSigner)
+            .estimateGas.deposit(
+                  amount,
+                  fee,
+                  ERC20Asset.address,
+                  smartWalletSigner.address,
+                  userWalletSigner.address,
+                  permit,
+                  signature,
+            );
 
       const t = await smartWalletFactory
             .connect(smartWalletSigner)
@@ -175,10 +138,6 @@ async function main(config: SmartWalletConfig) {
       console.log(r);
 
       console.log(await smartWalletFactory.tokenBalancesByUser(userSmartWallet.address, ERC20Asset.address));
-
-      const userBalance = await ERC20Asset.balanceOf(smartWalletSigner.address);
-      const userSWBalance = await ERC20Asset.balanceOf(userWalletSigner.address);
-      const recipientBalance = await ERC20Asset.balanceOf(userSmartWalletAddress);
 }
 
 const customConfig: SmartWalletConfig = {
@@ -226,57 +185,3 @@ export const assetsBaseConfig: Record<any, any> = {
             chainId: 97,
       },
 };
-
-// const { factory, permit2, wallet, ALICE, OWNER, BOB } = await loadFixture(loadContracts);
-// const { abc } = await deployERC20();
-// await abc.transfer(OWNER.address, "100000000000000000000");
-
-// await abc.connect(ALICE).approve(PERMIT2_ADDRESS, constants.MaxUint256); // approve max
-// const alicewaladdr = await factory.walletAddress(ALICE.address, 0);
-// const dep = await factory.connect(ALICE).createWallet(ALICE.address, { value: 15000000000 });
-// await dep.wait(1);
-// const alicewallet = (await ethers.getContractAt("ECDSAWallet", alicewaladdr)) as ECDSAWallet;
-// await alicewallet.deployed();
-// const amount = 1000;
-
-// console.log(ALICE.address, OWNER.address, BOB.address);
-// console.log(await factory.tokenBalancesByUser(OWNER.address, abc.address));
-// console.log(await factory.tokenBalancesByUser(BOB.address, abc.address));
-
-// const permit: PermitTransferFrom = {
-//       permitted: {
-//             token: abc.address,
-//             amount: amount,
-//       },
-//       spender: factory.address,
-//       nonce: 0,
-//       deadline: constants.MaxUint256.toBigInt(),
-// };
-
-// const witness: Witness = {
-//       witnessTypeName: "Witness",
-//       witnessType: { Witness: [{ name: "user", type: "address" }] },
-//       witness: { user: OWNER.address },
-// };
-// const { domain, types, values } = SignatureTransfer.getPermitData(permit, PERMIT2_ADDRESS, 1, witness);
-// let signature = await ALICE._signTypedData(domain, types, values);
-
-// const t = await factory
-//       .connect(OWNER)
-//       .populateTransaction.deposit(amount, abc.address, ALICE.address, OWNER.address, permit, signature);
-
-// const op = [
-//       {
-//             to: t.to,
-//             amount: 0n,
-//             data: t.data,
-//       },
-// ] as UserOp[];
-// // const exec = await alicewallet.connect(OWNER).populateTransaction.exec(op, "0x00");
-// const xx = await OWNER.sendTransaction(t);
-// const r = await xx.wait(1);
-// console.log(r);
-// console.log(await factory.tokenBalancesByUser(OWNER.address, abc.address));
-// await factory.connect(OWNER).withdrawERC20(abc.address, 500, alicewallet.address);
-// console.log(await factory.tokenBalancesByUser(OWNER.address, abc.address));
-// console.log(await factory.tokenBalancesByUser(alicewallet.address, abc.address));

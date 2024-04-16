@@ -1,21 +1,15 @@
 import { ChainId } from "@pancakeswap/chains";
 import chalk from "chalk";
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
 import type { Address } from "viem";
-import type { UserOp } from "../src/api";
-import { Deployments, ExtendedChainId } from "../src/constants/deploymentUtils";
+import type { UserOp } from "../test/utils/sign";
+import { Deployments, type ExtendedChainId } from "../src/constants/deploymentUtils";
 import { PUBLIC_NODES } from "../src/provider/chains";
 import { sleep } from "../src/utils/sleep";
 import { signTypedTx } from "../src/utils/typedMetaTx";
 import { parseContractError } from "../test/utils/error";
 import type { Transaction } from "../test/utils/sign";
 import { ECDSAWalletFactory__factory, ECDSAWallet__factory, ERC20__factory } from "../typechain-types";
-import { slice } from "lodash";
 import { formatUnits } from "ethers/lib/utils";
 
 export type SmartWalletConfig = {
@@ -94,51 +88,24 @@ async function main(config: SmartWalletConfig) {
 
       const userSmartWallet = ECDSAWallet__factory.connect(userSmartWalletAddress, provider);
       const currentWalletTxNonce = (await userSmartWallet?.nonce()) ?? 0;
-      // const userWalletBalance = await ERC20Asset.callStatic.balanceOf(
-      //       "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D"
-      // );
-      console.log(userWalletSigner.address);
-      // if (userWalletBalance.isZero()) {
-      //       console.log(
-      //             chalk.yellow(
-      //                   `You currently have no ${await ERC20Asset.symbol()}in
-      //                    your sart wallet. transfering from you naytve wallet`
-      //             )
-      //       );
-      //       const userToWalletTransferTx = await ERC20Asset.connect(
-      //             userWalletSigner
-      //       ).transfer(userSmartWalletAddress, config.amount);
-
-      //       const transferTxReceipt = await userToWalletTransferTx.wait(1);
-      //       console.log(
-      //             chalk.green(
-      //                   `transfer successful ${transferTxReceipt.transactionHash}\n`
-      //             )
-      //       );
-      // }
 
       const populatedTransferTx = await ERC20Asset.connect(smartWalletSigner).populateTransaction.transfer(
             config.recipientAddress,
             config.amount,
       );
 
-      const relayerTx: UserOp = {
-            to: smartWalletSigner.address,
-            amount: relayerFormatted,
-            data: "0x",
-      };
       const transferTx: UserOp = {
-            to: ERC20Asset.address,
-            amount: "0",
-            data: populatedTransferTx.data,
+            to: ERC20Asset.address as Address,
+            amount: 0n,
+            data: populatedTransferTx.data as Hex,
       };
 
-      const userOps = isCreationTx ? [transferTx] : [transferTx];
+      const userOps = [transferTx];
 
       const signature = await signTypedTx(
             userOps,
             userWalletSigner,
-            userSmartWalletAddress,
+            userSmartWalletAddress as Address,
             currentWalletTxNonce,
             chainId,
             chainId,
@@ -153,9 +120,13 @@ async function main(config: SmartWalletConfig) {
       if (isCreationTx && config.relayerFee) {
             try {
                   const gasPrice = await userSmartWallet.provider.getGasPrice();
-                  const gas = await userSmartWallet.estimateGas.exec(transaction.userOps, transaction.signature, {
-                        gasLimit: 200000,
-                  });
+                  const gas = await userSmartWallet.estimateGas.exec(
+                        transaction.userOps as any,
+                        transaction.signature,
+                        {
+                              gasLimit: 200000,
+                        },
+                  );
 
                   const txCost = gasPrice.mul(gas);
                   if (txCost.gt(transaction.userOps[0].amount)) {
@@ -178,7 +149,7 @@ async function main(config: SmartWalletConfig) {
       const smartWalletTx = await smartWalletSigner.sendTransaction(metaExecTxCallData);
       const txReciept = await smartWalletTx.wait(1);
 
-      console.log(chalk.green(`transfer successful}\n`, txReciept));
+      console.log(chalk.green("transfer successful}\n", txReciept));
       console.log(txReciept);
       await sleep(1500);
 

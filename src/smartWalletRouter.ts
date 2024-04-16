@@ -2,20 +2,21 @@
 import type { ChainId } from "@pancakeswap/chains";
 import { MaxUint256, PermitTransferFromData } from "@pancakeswap/permit2-sdk";
 import { getTokenPrices } from "@pancakeswap/price-api-sdk";
-import { CurrencyAmount, type Token, type Currency, type TradeType } from "@pancakeswap/sdk";
-import { SMART_ROUTER_ADDRESSES, SwapRouter, type SmartRouterTrade, type SwapOptions } from "@pancakeswap/smart-router";
+import { type Currency, CurrencyAmount, type Token, type TradeType } from "@pancakeswap/sdk";
+import { SMART_ROUTER_ADDRESSES, type SmartRouterTrade, type SwapOptions, SwapRouter } from "@pancakeswap/smart-router";
 import {
+      type PancakeSwapOptions,
       PancakeSwapUniversalRouter as UniversalRouter,
       getUniversalRouterAddress,
-      type PancakeSwapOptions,
 } from "@pancakeswap/universal-router-sdk";
 import type { BaseError } from "abitype";
-import { erc20Abi as ERC20ABI, formatTransactionRequest, type Address, type Hex, type PublicClient } from "viem";
+import { type Address, erc20Abi as ERC20ABI, type Hex, type PublicClient, formatTransactionRequest } from "viem";
 import { bscTestnet } from "viem/chains";
 import { getContractError, getTransactionError, parseAccount } from "viem/utils";
+import { Deployments } from "./constants/deploymentUtils";
 import { RouterTradeType, Routers } from "./encoder/buildOperation";
 import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
-import { PermitWithWithWitness, permit2TpedData } from "./permit/permit2TypedData";
+import { type PermitWithWithWitness, permit2TpedData } from "./permit/permit2TypedData";
 import { getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient, signer } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
@@ -25,7 +26,6 @@ import { AccountNotFoundError } from "./utils/error";
 import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
 import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
 import { typedMetaTx } from "./utils/typedMetaTx";
-import { Deployments } from "./constants/deploymentUtils";
 
 function calculateGasMargin(value: bigint, margin = 1000n): bigint {
       return (value * (10000n + margin)) / 10000n;
@@ -89,7 +89,7 @@ export abstract class SmartWalletRouter {
             const smartWalletTypedData = typedMetaTx(userOps, nonce, address, config.chainId);
 
             const permitSpender = Deployments[config.chainId].ECDSAWalletFactory;
-            const feeAmount = config.fees?.feeAmount?.quotient;
+            const feeAmount = config.fees?.feeAmount?.quotient as bigint;
             const amountWithFees = config.amount + feeAmount;
 
             const permit2MetaData = async (nonce: bigint) => {

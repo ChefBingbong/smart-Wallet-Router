@@ -56,7 +56,7 @@ export const permit2TpedData = (
 
       // if (nonce === undefined) throw new Error("PERMIT: missing nonce");
 
-      const permit = generatePermitTransferFromTypedData(token, amount, spender, witness, nonce);
+      const permit = generatePermitTransferFromTypedData(token, amount, spender, witness, nonce as bigint);
       const {
             domain,
             types,

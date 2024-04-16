@@ -1,13 +1,7 @@
 import { ChainId } from "@pancakeswap/chains";
 import chalk from "chalk";
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import type { Address } from "viem";
-import { Deployments, ExtendedChainId } from "../src/constants/deploymentUtils";
+import { Deployments, type ExtendedChainId } from "../src/constants/deploymentUtils";
 import { sleep } from "../src/utils/sleep";
 import { ECDSAWalletFactory__factory } from "../typechain-types";
 import { PUBLIC_NODES } from "../src/provider/chains";
