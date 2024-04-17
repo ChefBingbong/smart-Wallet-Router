@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "./IWalletFactory.sol";
+import "./interfaces/IWalletFactory.sol";
 import "./ECDSAWallet.sol";
 
 contract SmartWalletFactory is IWalletFactory {

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
-import {IAllowanceTransfer} from "./permit2/interfaces/IAllowanceTransfer.sol";
-import {IPermit2} from "./permit2/interfaces/IPermit2.sol";
+import {IAllowanceTransfer} from "../permit2/interfaces/IAllowanceTransfer.sol";
+import {IPermit2} from "../permit2/interfaces/IPermit2.sol";
 
 interface IWallet {
      event LogReceivedEther(address indexed _from, uint256 _amount);
@@ -37,7 +37,17 @@ interface IWallet {
 
      function nonce() external view returns (uint256);
 
+     function owner() external view returns (address);
+
      function getTradeDetails(uint256 _nonce) external view returns (TradeInfo memory);
 
-     function exec(UserOp[] calldata userOps, bytes memory _signature, address weth, address pancakeFactory) external;
+     function exec(
+          UserOp[] calldata userOps,
+          bytes memory _signature,
+          address weth,
+          address v2pancakeFactory,
+          address v3pancakeFactory
+     ) external;
+
+     function execFomEoa(UserOp[] calldata userOps) external;
 }

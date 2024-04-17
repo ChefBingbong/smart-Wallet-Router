@@ -48,7 +48,7 @@ contract ECDSAWallet is SmartWallet {
           }
      }
 
-     function owner() external view returns (address) {
+     function owner() public view virtual override returns (address) {
           return state().owner;
      }
 
@@ -88,12 +88,11 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encodePacked(opHashes));
      }
 
-     function _verify(UserOp[] memory _userOps, bytes memory _signature) internal view override returns (address) {
+     function _verify(UserOp[] memory _userOps, bytes memory _signature) internal view override {
           (uint256 _sigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
           address signer = domainSeperator(_sigChainID)
                .toTypedDataHash(keccak256(abi.encode(_TYPEHASH, hash(_userOps), nonce(), block.chainid, _sigChainID)))
                .recover(_sig);
           require(state().owner == signer, "ECDSAWallet: failed to verify signature");
-          return signer;
      }
 }

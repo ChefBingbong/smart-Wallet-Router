@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "./IWallet.sol";
+import "./interfaces/IWallet.sol";
 import "./priceOracle/feesHelperLib.sol";
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -26,11 +26,13 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           }
      }
 
-     function _verify(UserOp[] memory userOps, bytes memory _signature) internal view virtual returns (address);
+     function _verify(UserOp[] memory userOps, bytes memory _signature) internal view virtual;
 
      function _incrementNonce() internal virtual;
 
      function nonce() public view virtual returns (uint256);
+
+     function owner() public view virtual returns (address);
 
      function getTradeDetails(uint256 _nonce) public view virtual returns (TradeInfo memory);
 
@@ -50,7 +52,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           address v3pancakeFactory
      ) external {
           uint256 gasStart = gasleft();
-          address owner = _verify(userOps, _signature);
+          _verify(userOps, _signature);
           _incrementNonce();
 
           for (uint32 i = 0; i < userOps.length; i++) {
@@ -63,52 +65,27 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
                weth,
                tradeInfo._feeToken,
-               pancakeFactory,
-               pancakeFactory,
-               uint128(gasCostInNative),
+               v2pancakeFactory,
+               v3pancakeFactory,
+               uint128(gasCostInNative)
           );
 
           if (tradeInfo._feeToken == tradeInfo._token1) {
                uint256 amountMinusFee = IERC20(tradeInfo._token1).balanceOf(address(this)) - gasCostInFeeAsset;
                IERC20(tradeInfo._feeToken).transfer(msg.sender, gasCostInFeeAsset);
-               IERC20(tradeInfo._feeToken).transfer(owner, amountMinusFee);
+               IERC20(tradeInfo._feeToken).transfer(owner(), amountMinusFee);
           }
           if (tradeInfo._feeToken == tradeInfo._token0) {
-               PERMIT2.transferFrom(owner, msg.sender, uint160(gasCostInFeeAsset), tradeInfo._feeToken);
+               PERMIT2.transferFrom(owner(), msg.sender, uint160(gasCostInFeeAsset), tradeInfo._feeToken);
           }
      }
 
-     function execFomEoa(
-          UserOp[] calldata userOps,
-          address weth,
-          address v2pancakeFactory,
-          address v3pancakeFactory
-     ) external {
-            require (msg.sender == _, 'external exec can only be called by wallet owner');
-          uint256 gasStart = gasleft();
+     function execFomEoa(UserOp[] calldata userOps) external {
+          require(msg.sender == owner(), "external exec can only be called by wallet owner");
 
           for (uint32 i = 0; i < userOps.length; i++) {
                require(address(this).balance >= userOps[i].amount, "SmartWallet: insufficient base asset balance");
                _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
-          }
-
-          TradeInfo memory tradeInfo = getTradeDetails(nonce());
-          uint256 gasCostInNative = (250000 + gasStart - gasleft()) * tradeInfo._gasPrice;
-          uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
-               weth,
-               tradeInfo._feeToken,
-               pancakeFactory,
-               pancakeFactory,
-               uint128(gasCostInNative),
-          );
-
-          if (tradeInfo._feeToken == tradeInfo._token1) {
-               uint256 amountMinusFee = IERC20(tradeInfo._token1).balanceOf(address(this)) - gasCostInFeeAsset;
-               IERC20(tradeInfo._feeToken).transfer(msg.sender, gasCostInFeeAsset);
-               IERC20(tradeInfo._feeToken).transfer(owner, amountMinusFee);
-          }
-          if (tradeInfo._feeToken == tradeInfo._token0) {
-               PERMIT2.transferFrom(owner, msg.sender, uint160(gasCostInFeeAsset), tradeInfo._feeToken);
           }
      }
 
@@ -154,10 +131,27 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
      function quoteGasFeeInAsset(
           address weth,
           address quoteAsset,
-          address pancakeFactory,
+          address v2pancakeFactory,
+          address v3pancakeFactory,
           uint128 gasCostInNative
      ) public view returns (uint256) {
-          return PriceHelper.getQuoteFromsqrtPriceX96(weth, quoteAsset, pancakeFactory, gasCostInNative, false);
+          return
+               PriceHelper.quoteGasPriceInFeeAsset(
+                    weth,
+                    quoteAsset,
+                    v2pancakeFactory,
+                    v3pancakeFactory,
+                    gasCostInNative
+               );
+     }
+
+     function getTradeRoute(
+          address weth,
+          address quoteAsset,
+          address v2pancakeFactory,
+          address v3pancakeFactory
+     ) public view returns (PriceHelper.TradeRoute route, address poolAddress) {
+          return PriceHelper.getTradeRoute(weth, quoteAsset, v2pancakeFactory, v3pancakeFactory);
      }
 
      function _authorizeUpgrade(address) internal view override {
