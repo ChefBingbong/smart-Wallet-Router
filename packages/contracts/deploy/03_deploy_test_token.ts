@@ -4,21 +4,20 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import { Depositor, ECDSAWallet__factory } from "../typechain-types";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import type { DeployFunction } from "hardhat-deploy/types";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-      const { deploy } = hre.deployments;
-      const { deployer } = await hre.getNamedAccounts();
+     const { deploy } = hre.deployments;
+     const { deployer } = await hre.getNamedAccounts();
 
-      const res = await deploy("XYZ", {
-            from: deployer,
-            args: [],
-            log: true,
-      });
+     const res = await deploy("XYZ", {
+          from: deployer,
+          args: [],
+          log: true,
+     });
 
-      console.log("XYZ deployed to:", res.address);
+     console.log("XYZ deployed to:", res.address);
 };
 
 export default func;

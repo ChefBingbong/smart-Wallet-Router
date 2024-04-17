@@ -1,0 +1,112 @@
+{
+  "address": "0xEA01BF64cb7705c504aE1e5Fc4a86911FC887cc8",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "PANCAKE_V3_FACTORY_BSC",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PANCAKE_V3_FACTORY_ETH",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "WETH_BSC",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "WETH_ETH",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chainId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getContractAddresses",
+      "outputs": [
+        {
+          "internalType": "address[2]",
+          "name": "",
+          "type": "address[2]"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xd355e00422a70f02ba2a5acc26161eb815d12c3b0fe5ddeb9f07a7dacd1242e9",
+  "receipt": {
+    "to": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "from": "0xdBf48f5DB3d4bd13b9a29052947cB2edD6a2d132",
+    "contractAddress": null,
+    "transactionIndex": 7,
+    "gasUsed": "201795",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xc4ad569f7db8be0adb668bef0379fb278cf474a8d75c2511ac05ee666505048c",
+    "transactionHash": "0xd355e00422a70f02ba2a5acc26161eb815d12c3b0fe5ddeb9f07a7dacd1242e9",
+    "logs": [],
+    "blockNumber": 39527599,
+    "cumulativeGasUsed": "784243",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "45a6f5cf46b1ea4712472b859564d202",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"PANCAKE_V3_FACTORY_BSC\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"PANCAKE_V3_FACTORY_ETH\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"WETH_BSC\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"WETH_ETH\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"}],\"name\":\"getContractAddresses\",\"outputs\":[{\"internalType\":\"address[2]\",\"name\":\"\",\"type\":\"address[2]\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/permit2/libraries/ContractAddresses.sol\":\"ContractAddresses\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":1000},\"remappings\":[],\"viaIR\":true},\"sources\":{\"contracts/permit2/libraries/ContractAddresses.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.7.0 <0.9.0;\\n\\nlibrary ContractAddresses {\\n     address public constant WETH_ETH = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // WETH on Binance Smart Chain\\n     address public constant PANCAKE_V3_FACTORY_ETH = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865; // USDT on Binance Smart Chain\\n\\n     address public constant WETH_BSC = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd; // WETH on Binance Smart Chain\\n     address public constant PANCAKE_V3_FACTORY_BSC = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865; // USDT on Binance Smart Chain\\n\\n     function getContractAddresses(uint256 chainId) public pure returns (address[2] memory) {\\n          address[2] memory addresses;\\n\\n          if (chainId == 1) {\\n               // Ethereum Mainnet\\n               addresses[0] = WETH_ETH; // WETH\\n               addresses[1] = PANCAKE_V3_FACTORY_ETH; // USDT\\n          } else if (chainId == 97) {\\n               // Binance Smart Chain Mainnet\\n               addresses[0] = WETH_BSC; // WETH\\n               addresses[1] = PANCAKE_V3_FACTORY_BSC; // USDT\\n          } else {\\n               revert(\\\"Chain ID not supported\\\");\\n          }\\n\\n          return addresses;\\n     }\\n}\\n\",\"keccak256\":\"0xabfa77e1d9e1893f0bc2a6efe9f9b07d19f81873314a391550a8991e54434c8d\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x6080806040523461001a576102b09081610020823930815050f35b600080fdfe608080604052600436101561001357600080fd5b6000803560e01c9182634ea5fc86146101d3575081635ec3aa4b146101a75781636880c5c81461019d5781639bc527bd14610061575063d4dc024214610059575b600080fd5b6100546101fa565b60208060031936011261019957600435610079610225565b50610082610225565b6001918083036100fe575073bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c8152730bfbcf9fa4f9c56b0f40a671ad40e0805a09186583820152925b60405192839491945b600286106100d557604085f35b825173ffffffffffffffffffffffffffffffffffffffff168152948301949181019181016100c8565b60610361013b5773ae13d989dac2f0debff460ac112a837c89baa7cd8152730bfbcf9fa4f9c56b0f40a671ad40e0805a09186583820152926100bf565b606483604051907f08c379a00000000000000000000000000000000000000000000000000000000082526004820152601660248201527f436861696e204944206e6f7420737570706f72746564000000000000000000006044820152fd5b5080fd5b50506100546101fa565b806003193601126101d057602060405173bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c8152f35b80fd5b81600319360112610199578073ae13d989dac2f0debff460ac112a837c89baa7cd60209252f35b506000366003190112610054576020604051730bfbcf9fa4f9c56b0f40a671ad40e0805a0918658152f35b604051906040820182811067ffffffffffffffff82111761024b57604052604082369037565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fdfea264697066735822122029b0e9abae1aafaa6c09ec887a01fbb52d72c9203b56d4b1b04b116629bd59d664736f6c63430008110033",
+  "deployedBytecode": "0x608080604052600436101561001357600080fd5b6000803560e01c9182634ea5fc86146101d3575081635ec3aa4b146101a75781636880c5c81461019d5781639bc527bd14610061575063d4dc024214610059575b600080fd5b6100546101fa565b60208060031936011261019957600435610079610225565b50610082610225565b6001918083036100fe575073bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c8152730bfbcf9fa4f9c56b0f40a671ad40e0805a09186583820152925b60405192839491945b600286106100d557604085f35b825173ffffffffffffffffffffffffffffffffffffffff168152948301949181019181016100c8565b60610361013b5773ae13d989dac2f0debff460ac112a837c89baa7cd8152730bfbcf9fa4f9c56b0f40a671ad40e0805a09186583820152926100bf565b606483604051907f08c379a00000000000000000000000000000000000000000000000000000000082526004820152601660248201527f436861696e204944206e6f7420737570706f72746564000000000000000000006044820152fd5b5080fd5b50506100546101fa565b806003193601126101d057602060405173bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c8152f35b80fd5b81600319360112610199578073ae13d989dac2f0debff460ac112a837c89baa7cd60209252f35b506000366003190112610054576020604051730bfbcf9fa4f9c56b0f40a671ad40e0805a0918658152f35b604051906040820182811067ffffffffffffffff82111761024b57604052604082369037565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fdfea264697066735822122029b0e9abae1aafaa6c09ec887a01fbb52d72c9203b56d4b1b04b116629bd59d664736f6c63430008110033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}

@@ -8,7 +8,11 @@ import {
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useDeferredValue } from "react";
 import type { Address } from "viem";
-import { v2SubgraphClient, v3SubgraphClient } from "~/config/client";
+import {
+  v2SubgraphClient,
+  v3SubgraphClient,
+  // publicClient,
+} from "~/config/client";
 import { publicClient } from "~/config/wagmiConfig";
 import {
   createQueryKey,

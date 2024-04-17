@@ -21,6 +21,7 @@ export const TransactionCard = ({
   asset,
   toAsset,
   txState,
+  feeAsset,
   tx,
 }: {
   inputValue: string;
@@ -30,17 +31,19 @@ export const TransactionCard = ({
     gasCostInNative: CurrencyAmount<Token>;
     gasCostInUSD: CurrencyAmount<Currency>;
     gasEstimate: CurrencyAmount<Currency>;
+    gasCost: CurrencyAmount<Currency>;
   };
   txState: ConfirmModalState;
   asset: Currency;
   toAsset: Currency;
+  feeAsset: Currency;
   trade: SmartRouterTrade<TradeType> | undefined;
   tx: TransactionReceipt | undefined;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const relayerBalance = useTokenBalance(
-    asset.wrapped.address,
+    feeAsset.address,
     "0xdBf48f5DB3d4bd13b9a29052947cB2edD6a2d132",
   );
   const userBalance = useTokenBalance(toAsset.wrapped.address);
@@ -51,7 +54,7 @@ export const TransactionCard = ({
   );
 
   const formatUserBalance = useMemo(
-    () => userBalance.balance.shiftedBy(-toAsset.decimals).toFixed(3),
+    () => userBalance.balance.shiftedBy(-feeAsset.decimals).toFixed(3),
     [userBalance, toAsset],
   );
 
@@ -83,7 +86,7 @@ export const TransactionCard = ({
         <div className="font-semibold">Total Trade Cost</div>
         <div className="flex items-center justify-center gap-2">
           {trade && fees && (
-            <div className="text-gray-500">{`${Number(trade?.outputAmount.toExact()).toFixed(3)} + ${Number(fees?.gasCostInQuoteToken.toExact()).toFixed(3)} = ${(Number(trade.outputAmount.toExact()) + Number(fees.gasCostInQuoteToken.toExact())).toFixed(3)} BUSD`}</div>
+            <div className="text-gray-500">{`${Number(trade?.outputAmount.toExact()).toFixed(3)} + ${Number(fees?.gasCost?.toExact()).toFixed(3)} = ${(Number(trade.outputAmount.toExact()) + Number(fees.gasCostInQuoteToken.toExact())).toFixed(3)} BUSD`}</div>
           )}
           {inputValue === "" && (
             <div className="text-gray-500">{"........"}</div>
@@ -111,9 +114,9 @@ export const TransactionCard = ({
         </div>
         <div className="w-fit-content lh-16 mt-8 flex flex-col gap-0">
           <div className="mb-2 flex w-full justify-between">
-            <div className="bold   text-ml">{"Relayer BUSD Balance"}</div>
+            <div className="bold   text-ml">{`Relayer ${feeAsset.symbol} Balance`}</div>
             <div className="overflow-ellipsis text-[17px]   ">
-              {`${formatRelauerBalance} ${toAsset.symbol}`}
+              {`${formatRelauerBalance} ${feeAsset.symbol}`}
             </div>
           </div>
           <div className="mb-2 flex w-full justify-between">

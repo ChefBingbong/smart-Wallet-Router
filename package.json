@@ -7,9 +7,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "pnpm --filter example",
-    "test-contracts": "pnpm test --filter @smart-wallet/contracts",
-    "lib": "pnpm --filter @smart-wallet/smart-router-sdk",
-    "dev": "pnpm --recursive --parallel --stream run dev"
+    "test-contracts": "pnpm --filter @smart-wallet/contracts run test",
+    "deploy:contracts": "pnpm --filter @smart-wallet/contracts run deploy",
+    "run:script": "pnpm --filter @smart-wallet/contracts run script",
+    "sdk": "pnpm --filter @smart-wallet/smart-router-sdk",
+    "dev": "pnpm --recursive --parallel --stream run dev",
+    "build:packages": "pnpm --filter @smart-wallet/smart-router-sdk run build"
   },
   "keywords": [],
   "author": "",

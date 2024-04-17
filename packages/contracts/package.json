@@ -5,6 +5,8 @@
       "scripts": {
             "test": "npx hardhat test",
             "compile": "npx hardhat compile",
+            "deploy": "npx hardhat deploy",
+            "script": "npx hardhat run",
             "format:check": "prettier --check --loglevel error \"{src,test}/**/*.{js,jsx,ts,tsx,json}\"",
             "format:write": "prettier --write \"{src,test}/**/*.{js,jsx,ts,tsx,json}\"",
             "lint": "eslint '{src,test}/**/*.{js,jsx,ts,json}'"
@@ -36,6 +38,7 @@
             "@openzeppelin/contracts": "^4.8.0-rc.1",
             "@openzeppelin/contracts-upgradeable": "^4.8.0-rc.1",
             "@pancakeswap/permit2-sdk": "^1.0.2",
+            "@pancakeswap/sdk": "^5.8.1",
             "@uniswap/permit2-sdk": "^1.2.0",
             "chalk": "4.1.2",
             "dotenv": "^16.0.3",

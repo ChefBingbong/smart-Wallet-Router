@@ -6,32 +6,11 @@ import {
 } from "@pancakeswap/swap-sdk-core";
 import type { PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
 import type { Address } from "viem";
-
-export interface BaseTradeOptions<TOps> {
-  account: Address;
-  chainId: ChainId;
-  router: string;
-  underlyingTradeOptions: TOps;
-}
-
-export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
-  router: string;
-}
-
-export interface SmartWalletTradeOptions
-  extends BaseTradeOptions<PancakeSwapOptions> {
-  hasApprovedPermit2: boolean;
-  hasApprovedRelayer: boolean;
-  fees?: {
-    feeTokenAddress: Address;
-    feeAmount: CurrencyAmount<Currency>;
-  };
-  isUsingPermit2: boolean;
-  walletPermitOptions?: never;
-  smartWalletDetails: { address: Address; nonce: bigint };
-  SmartWalletTradeType: string;
-  router: string;
-}
+import {
+  RouterTradeType,
+  Routers,
+  type SmartWalletTradeOptions,
+} from "@smart-wallet/smart-router-sdk";
 
 export const getSmartWalletOptions = (
   address: Address,
@@ -54,8 +33,8 @@ export const getSmartWalletOptions = (
     account: address,
     chainId,
     smartWalletDetails: smartWalletDetails,
-    SmartWalletTradeType: "SmartWalletTradeWithPermit2",
-    router: "SmartRouter",
+    SmartWalletTradeType: RouterTradeType.SmartWalletTradeWithPermit2,
+    router: Routers.SmartOrderRouter,
     fees,
     isUsingPermit2: isUsingPermit2,
     hasApprovedPermit2: !allowance.permit2Allowances.needsApproval,

@@ -1,10 +1,6 @@
 "use-client";
 import { defaultAbiCoder } from "@ethersproject/abi";
-import {
-  getWalletPermit2Address as getPermit2Address,
-  getWalletPermit2Address,
-} from "~/utils/getWalletPermit2Address";
-import { type ChainId, type Currency, CurrencyAmount } from "@pancakeswap/sdk";
+import { CurrencyAmount, type ChainId, type Currency } from "@pancakeswap/sdk";
 import { CopyIcon } from "@pancakeswap/uikit";
 import { LoadingSpinner } from "@saas-ui/react";
 import {
@@ -13,14 +9,19 @@ import {
   getNonceHelperContract,
 } from "@smart-wallet/smart-router-sdk";
 import { useQuery } from "@tanstack/react-query";
-import type BigNumber from "bignumber.js";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  type TransactionReceipt,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  type Address,
   TransactionRejectedRpcError,
   UserRejectedRequestError,
-  Address,
+  type TransactionReceipt,
 } from "viem";
 import {
   useAccount,
@@ -33,18 +34,13 @@ import {
 } from "wagmi";
 import { SliderToggleButton } from "~/components/TabSelect";
 import { TransactionCard } from "~/components/TransactionDetails";
-import { useTokenBalance } from "~/hooks/useBalance";
+import useDebounce from "~/hooks/useDebounce";
 import { useSmartRouterBestTrade } from "~/hooks/useSmartRouterBestTrade";
-import { type Asset, assets, assetsBaseConfig } from "~/lib/assets";
+import { useTheme } from "~/hooks/useTheme";
+import { assets, assetsBaseConfig, type Asset } from "~/lib/assets";
 import { wagmiconfig as config } from "~/pages/_app";
 import { getSmartWalletOptions } from "~/utils/getSmartWalletOptions";
-import {
-  PERMIT_SIG_EXPIRATION,
-  PermitTransferFrom,
-  SignatureTransfer,
-  Witness,
-  toDeadline,
-} from "@pancakeswap/permit2-sdk";
+import { getWalletPermit2Address as getPermit2Address } from "~/utils/getWalletPermit2Address";
 
 export enum ConfirmModalState {
   REVIEWING = -1,
@@ -75,7 +71,13 @@ const IndexPage = () => {
   const [inputValue, setInputValue] = useState("");
   const [asset, setAsset] = useState<Currency>(assetsBaseConfig.CAKE);
   const [toAsset, setToAsset] = useState<Currency>(assetsBaseConfig.BUSD);
-  const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.CAKE);
+  const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.BUSD);
+
+  const { transactionStatusDisplay, primaryColor, secondaryColor } = useTheme(
+    txState,
+    asset,
+    toAsset,
+  );
 
   const amount = useMemo(
     () =>
@@ -85,36 +87,6 @@ const IndexPage = () => {
       ),
     [asset, inputValue],
   );
-
-  const transactionStatusDisplay = useMemo(() => {
-    switch (txState) {
-      case ConfirmModalState.REVIEWING:
-        return `Swap ${asset.symbol} for ${toAsset.symbol}`;
-      case ConfirmModalState.APPROVING_TOKEN:
-        return `Approving Smart wallet for ${asset.symbol}`;
-      case ConfirmModalState.PERMITTING:
-        return `Permitting Relayer ${asset.symbol}`;
-      case ConfirmModalState.PENDING_CONFIRMATION:
-        return "Awaiting Confirmtion";
-      case ConfirmModalState.EXECUTING:
-        return "Executing Wallet Ops";
-      case ConfirmModalState.COMPLETED:
-        return "transaction Successful";
-      case ConfirmModalState.FAILED:
-        return "transaction Failed";
-      default:
-        return `Trade ${asset.symbol}`;
-    }
-  }, [txState, asset, toAsset]);
-
-  const primaryColor = useMemo(() => {
-    if (txState === ConfirmModalState.FAILED) return "bg-red-600";
-    return "bg-indigo-600";
-  });
-  const secondaryColor = useMemo(() => {
-    if (txState === ConfirmModalState.FAILED) return "bg-red-600";
-    return "bg-indigo-600";
-  });
 
   const handleAssetChange = useCallback(
     (
@@ -137,7 +109,7 @@ const IndexPage = () => {
     [txState],
   );
 
-  const { data: smartWalletDetails } = useQuery({
+  const { data: smartWalletDetails, refetch } = useQuery({
     queryKey: ["smartWalletDetails", address, chainId],
     queryFn: async () => {
       if (!address || !chainId) return;
@@ -147,7 +119,8 @@ const IndexPage = () => {
     refetchOnWindowFocus: false,
     enabled: Boolean(address && chainId),
   });
-
+  const deferQuotientRaw = useDeferredValue(amount.quotient.toString());
+  const deferQuotient = useDebounce(deferQuotientRaw, 500);
   const {
     data: trade,
     isLoading,
@@ -160,7 +133,6 @@ const IndexPage = () => {
     amount: amount,
   });
 
-  console.log(trade);
   const { data: allowance } = useQuery({
     queryKey: ["allowance-query", chainId, asset.symbol, address, chainId],
     queryFn: async () => {
@@ -195,29 +167,21 @@ const IndexPage = () => {
   });
 
   const { data: fees } = useQuery({
-    queryKey: ["fees-query", chainId, address, trade?.gasEstimate.toString()],
+    queryKey: ["fees-query", chainId, deferQuotient, feeAsset.symbol],
     queryFn: async () => {
-      if (!address || !chainId || !trade || !allowance) return undefined;
-      const options = getSmartWalletOptions(
-        address,
-        true,
-        allowance,
-        smartWalletDetails as never,
-        chainId,
-        undefined as never,
-      );
+      if (!chainId || !trade || !deferQuotient || !feeAsset) return undefined;
+
       return SmartWalletRouter.estimateSmartWalletFees({
-        address,
-        options,
+        feeAsset: feeAsset.symbol,
         trade,
         chainId,
       });
     },
 
-    refetchInterval: 20000,
+    refetchInterval: 10000,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: Boolean(allowance && address && trade && chainId),
+    enabled: Boolean(deferQuotient && trade && chainId && feeAsset),
   });
 
   const swapCallParams = useMemo(() => {
@@ -239,7 +203,7 @@ const IndexPage = () => {
       chainId,
       {
         feeTokenAddress: feeAsset.wrapped.address,
-        feeAmount: fees.gasCostInBaseToken,
+        feeAmount: fees.gasCost,
       } as never,
     );
     return SmartWalletRouter.buildSmartWalletTrade(trade, options);
@@ -275,7 +239,7 @@ const IndexPage = () => {
       domain: permitTypedData.domain,
       types: permitTypedData.types,
       message: permitTypedData.values,
-      primaryType: "PermitWitnessTransferFrom",
+      primaryType: "PermitBatch",
     })
       .then(async (permittSig) => {
         setTXState(ConfirmModalState.PENDING_CONFIRMATION);
@@ -283,7 +247,6 @@ const IndexPage = () => {
         const { userOps: permiUserOps } = SmartWalletRouter.appendPermit2UserOp(
           permittSig,
           address,
-          fees?.gasCostInBaseToken.quotient,
           permitTypedData,
         );
         const updatedOps = [...permiUserOps, ...values.userOps];
@@ -306,7 +269,12 @@ const IndexPage = () => {
             );
 
             const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
-              [updatedOps, signatureEncoded],
+              [
+                updatedOps,
+                signatureEncoded,
+                feeAsset.wrapped.address,
+                5000000000n,
+              ],
               smartWalletDetails?.address,
             );
 
@@ -315,9 +283,9 @@ const IndexPage = () => {
             );
             let response = null;
             if (
-              SmartWalletRouter.tradeConfig.tradeType !==
+              swapCallParams.config.SmartWalletTradeType ===
                 RouterTradeType.SmartWalletTrade ||
-              SmartWalletRouter.tradeConfig.tradeType !==
+              swapCallParams.config.SmartWalletTradeType ===
                 RouterTradeType.SmartWalletTradeWithPermit2
             ) {
               response = await SmartWalletRouter.sendTransactionFromRelayer(
@@ -336,6 +304,7 @@ const IndexPage = () => {
             console.log(response);
             setTx(response);
             setTXState(ConfirmModalState.COMPLETED);
+            refetch();
             console.log(response);
             return response as TransactionReceipt;
           })
@@ -451,9 +420,7 @@ const IndexPage = () => {
                   type="number"
                   className="h-14 flex-1 grow rounded-md bg-gray-100 px-6 text-right outline-none focus:bg-gray-200"
                   value={
-                    fees
-                      ? Number(fees?.gasCostInBaseToken?.toExact()).toFixed(5)
-                      : ""
+                    fees ? Number(fees?.gasCost?.toExact()).toFixed(5) : ""
                   }
                   placeholder="choose your fee asset"
                   disabled
@@ -487,6 +454,7 @@ const IndexPage = () => {
                 txState={txState}
                 asset={asset}
                 toAsset={toAsset}
+                feeAsset={feeAsset}
                 fees={fees as never}
                 trade={trade}
                 inputValue={inputValue}

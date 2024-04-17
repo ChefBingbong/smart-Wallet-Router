@@ -2,13 +2,12 @@ import type { ChainId } from "@pancakeswap/chains";
 import { configureChains } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-import { CHAINS, PUBLIC_NODES, type ExtendedChainId } from "./chains";
+import { CHAINS, PUBLIC_NODES, type ExtendedChainId } from "~/config/chains";
 
 const mostNodesConfig = Object.values(PUBLIC_NODES).reduce((prev, cur) => {
   return cur.length > prev ? cur.length : prev;
 }, 0);
 
-export { chains, publicClient };
 const { publicClient, chains } = configureChains(
   CHAINS,
   Array.from({ length: mostNodesConfig })
@@ -41,7 +40,7 @@ const { publicClient, chains } = configureChains(
     pollingInterval: 6_000,
   },
 );
-
+export { chains, publicClient };
 export const noopStorage = {
   getItem: (_key: never) => "",
   setItem: (_key: never, _value: never) => null,
