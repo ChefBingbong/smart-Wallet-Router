@@ -1,6 +1,6 @@
 import hre from "hardhat";
 import { defaultAbiCoder } from "@ethersproject/abi";
-import type { PopulatedTransaction } from "ethers";
+import type { PopulatedTransaction, Signer } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Address, Hex } from "viem";
 
@@ -17,11 +17,16 @@ export interface Transaction {
 }
 
 //Meta Transactions
-export const sign = async (userOps: UserOp[], nonce: bigint, account: SignerWithAddress, verifyingContract: string) => {
+export const sign = async (
+     userOps: UserOp[],
+     nonce: bigint,
+     account: SignerWithAddress | Signer,
+     verifyingContract: string,
+) => {
      const domain = {
           name: "ECDSAWallet",
           version: "0.0.1",
-          chainId: hre.network.config.chainId,
+          chainId: 97,
           verifyingContract,
      };
 
@@ -41,17 +46,17 @@ export const sign = async (userOps: UserOp[], nonce: bigint, account: SignerWith
      const values = {
           userOps: userOps,
           nonce,
-          chainID: hre.network.config.chainId,
-          sigChainID: hre.network.config.chainId,
+          chainID: 97,
+          sigChainID: 97,
      };
 
-     console.log(hre.network.config.chainId);
+     console.log(97);
 
      const signature = await account._signTypedData(domain, types, values);
-     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [hre.network.config.chainId, signature]);
+     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [97, signature]);
      const txn = {
           userOps,
-          chainID: hre.network.config.chainId,
+          chainID: 97,
           signature: sig,
      };
      return {

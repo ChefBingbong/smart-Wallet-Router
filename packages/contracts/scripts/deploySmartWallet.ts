@@ -16,13 +16,14 @@ export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main(config: SmartWalletConfig) {
      const chainId = config.chainId;
+     const smartRouterClient = chain;
      const provider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.binance.org:8545/");
 
      const deployerPk = config?.smartWalletSigner;
      const smartWalletSigner = new ethers.Wallet(deployerPk, provider);
 
      const smartWalletFactory = ECDSAWalletFactory__factory.connect(
-          "0xE9c632c0Bc8aB05E7f4Cb3136E6607e613bB687D",
+          "0xf40A6A3b302D465dfCBB4d7dB6B660720F1F642a",
           smartWalletSigner,
      );
 

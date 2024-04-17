@@ -11,23 +11,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
      console.log("deployer Address", deployer);
      console.log("smart wallet Address", smartWallet.address);
 
-     const libRes = await deploy("ContractAddresses", {
-          from: deployer,
-          args: [],
-          log: true,
-          skipIfAlreadyDeployed: false,
-          deterministicDeployment: "0x01",
-     });
-
      const res = await deploy("ECDSAWalletFactory", {
-          libraries: {
-               ContractAddresses: libRes.address,
-          },
           from: deployer,
           args: [smartWallet.address],
           log: true,
           skipIfAlreadyDeployed: false,
-          deterministicDeployment: "0x07",
+          deterministicDeployment: "0x0006",
      });
      // await res.d
      console.log("ECDSAWalletFactory Address", res.address);

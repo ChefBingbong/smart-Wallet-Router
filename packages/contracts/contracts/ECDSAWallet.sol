@@ -1,23 +1,19 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
+// pragma experimental ABIEncoderV2;
 
 import "./SmartWallet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "hardhat/console.sol";
-import {IPermit2} from "./permit2/interfaces/IPermit2.sol";
-import {ISignatureTransfer} from "./permit2/interfaces/ISignatureTransfer.sol";
-import {IAllowanceTransfer} from "./permit2/interfaces/IAllowanceTransfer.sol";
 
 contract ECDSAWallet is SmartWallet {
-     // IPermit2 public PERMIT2;
-     // ISignatureTransfer PermitBatchTransferFrom;
-     // IAllowanceTransfer PermitBatch;
      using ECDSAUpgradeable for bytes32;
-
      bytes32 private constant ECDSA_WALLET_STORAGE_POSITION = keccak256("wallet.ecdsa.v1");
+
      struct ECDSAWalletState {
           address owner;
           uint96 nonce;
+          mapping(uint256 => TradeInfo) walletTrades;
      }
 
      bytes32 private constant HASHED_NAME = keccak256(bytes("ECDSAWallet"));
@@ -33,7 +29,6 @@ contract ECDSAWallet is SmartWallet {
           );
 
      function domainSeperator(uint256 _chainID) public view returns (bytes32) {
-          console.log("scccc", address(this));
           return keccak256(abi.encode(TYPE_HASH, HASHED_NAME, HASHED_VERSION, _chainID, address(this)));
      }
 
@@ -57,8 +52,26 @@ contract ECDSAWallet is SmartWallet {
           return state().owner;
      }
 
+     //      function permit2() public view virtual override returns (address) {
+     //           return state().permit2;
+     //      }
+
+     function getTradeDetails(uint256 _nonce) public view override returns (TradeInfo memory) {
+          return state().walletTrades[_nonce];
+     }
+
      function nonce() public view virtual override returns (uint256) {
           return state().nonce;
+     }
+
+     function addNewTradeDetails(
+          address _token0,
+          address _token1,
+          address _feeToken,
+          uint256 _amountIn,
+          uint256 _gasPrice
+     ) internal override {
+          state().walletTrades[nonce()] = TradeInfo(_token0, _token1, _feeToken, _amountIn, _gasPrice);
      }
 
      function _incrementNonce() internal override {
@@ -75,23 +88,12 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encodePacked(opHashes));
      }
 
-     function _verify(UserOp[] memory _userOps, bytes memory _signature) internal view override {
+     function _verify(UserOp[] memory _userOps, bytes memory _signature) internal view override returns (address) {
           (uint256 _sigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
           address signer = domainSeperator(_sigChainID)
                .toTypedDataHash(keccak256(abi.encode(_TYPEHASH, hash(_userOps), nonce(), block.chainid, _sigChainID)))
                .recover(_sig);
-          console.log(state().owner, signer, nonce());
           require(state().owner == signer, "ECDSAWallet: failed to verify signature");
+          return signer;
      }
-
-     // function deposit(
-     //       uint256 _amount,
-     //       uint256 _feeAmount,
-     //       address _token,
-     //       address _feeToken,
-     //       address _owner,
-     //       address _user,
-     //       IAllowanceTransfer.PermitBatch calldata _permit,
-     //       bytes calldata _signature
-     // ) external override {}
 }

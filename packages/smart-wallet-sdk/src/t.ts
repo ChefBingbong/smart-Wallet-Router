@@ -30,7 +30,7 @@ async function main() {
      // Multiply by 1e18 and divide by 2^96
      const actualPrice = (price * BigInt(10 ** 18)) / 2n ** 96n;
 
-     console.log(gasPrice);
+     console.log(706514391239496501434898664900431974473n / 9156426510377161051779656776686050286487n);
 }
 
 main();

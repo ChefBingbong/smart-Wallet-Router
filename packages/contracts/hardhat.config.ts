@@ -4,7 +4,10 @@ import "hardhat-deploy";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const defaultAccounts = ["22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4"];
+const defaultAccounts = [
+     "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
+     "225bfce31326a62a6360dfc47c1b8f9ba0ad5b45c988fb66f2494cacd106048a",
+];
 
 const config: HardhatUserConfig = {
      networks: {
@@ -124,16 +127,37 @@ const config: HardhatUserConfig = {
           deployer: {
                default: 0, // here this will by default take the first account as deployer
           },
+          user: {
+               default: 1,
+          },
      },
      solidity: {
-          version: "0.8.17",
-          settings: {
-               viaIR: true,
-               optimizer: {
-                    enabled: true,
-                    runs: 1000,
+          compilers: [
+               {
+                    version: "0.8.17",
+                    settings: {
+                         evmVersion: "istanbul",
+                         viaIR: true,
+                         optimizer: {
+                              enabled: true,
+                              runs: 1000,
+                         },
+                    },
                },
-          },
+               {
+                    version: "0.7.6",
+                    settings: {
+                         evmVersion: "istanbul",
+                         optimizer: {
+                              enabled: true,
+                              runs: 400,
+                         },
+                         metadata: {
+                              bytecodeHash: "none",
+                         },
+                    },
+               },
+          ],
      },
 };
 

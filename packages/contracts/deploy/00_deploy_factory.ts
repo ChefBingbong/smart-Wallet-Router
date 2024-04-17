@@ -11,7 +11,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           args: [],
           log: true,
           skipIfAlreadyDeployed: false,
-          deterministicDeployment: "0x07",
+          deterministicDeployment: "0x0006",
      });
      console.log("SmartWalletFactory Address", res.address);
 };
