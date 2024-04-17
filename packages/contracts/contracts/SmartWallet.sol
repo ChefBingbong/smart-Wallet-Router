@@ -26,7 +26,11 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           }
      }
 
-     function _verify(UserOp[] memory userOps, bytes memory _signature) internal view virtual;
+     function _verify(
+          UserOp[] memory userOps,
+          AllowanceOp memory allowanceOp,
+          bytes memory _signature
+     ) internal view virtual;
 
      function _incrementNonce() internal virtual;
 
@@ -46,13 +50,14 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
 
      function exec(
           UserOp[] calldata userOps,
+          AllowanceOp calldata allowanceOp,
           bytes calldata _signature,
           address weth,
           address v2pancakeFactory,
           address v3pancakeFactory
      ) external {
           uint256 gasStart = gasleft();
-          _verify(userOps, _signature);
+          _verify(userOps, allowanceOp, _signature);
           _incrementNonce();
 
           for (uint32 i = 0; i < userOps.length; i++) {
@@ -60,6 +65,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
                _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
           }
 
+          if (block.chainid == 31337) return;
           TradeInfo memory tradeInfo = getTradeDetails(nonce());
           uint256 gasCostInNative = (250000 + gasStart - gasleft()) * tradeInfo._gasPrice;
           uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(

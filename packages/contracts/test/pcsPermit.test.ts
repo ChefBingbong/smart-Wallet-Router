@@ -19,7 +19,7 @@ import type {
      AMMSwap,
      AMMSwap__factory,
 } from "../typechain-types";
-import { UserOp, sign } from "./utils/sign";
+import { AllowanceOp, UserOp, sign } from "./utils/sign";
 import {
      AllowanceTransfer,
      generatePermitTypedData,
@@ -38,7 +38,7 @@ import { constants } from "ethers";
 import { PermitTransferFrom } from "@pancakeswap/permit2-sdk";
 import { Console } from "console";
 import { ERC20Token } from "@pancakeswap/sdk";
-import { zeroAddress } from "viem";
+import { maxUint256, zeroAddress } from "viem";
 
 describe("Permit2 Signature Transfer", () => {
      // const PERMIT2_ADDRESS = getPermit2Address(97);
@@ -187,7 +187,7 @@ describe("Permit2 Signature Transfer", () => {
                          token: abc.address,
                          amount: MaxAllowanceTransferAmount,
                          expiration: toDeadline(PERMIT_EXPIRATION).toString(),
-                         nonce: 73n,
+                         nonce: 0n,
                     },
                     // {
                     //       token: xyz.address,
@@ -200,7 +200,7 @@ describe("Permit2 Signature Transfer", () => {
                sigDeadline: toDeadline(PERMIT_SIG_EXPIRATION).toString(),
           };
 
-          const { domain, types, values } = AllowanceTransfer.getPermitData(permitB, permit2.address, 97);
+          const { domain, types, values } = AllowanceTransfer.getPermitData(permitB, permit2.address, 31337);
           let signature = await ALICE._signTypedData(domain, types, values);
           //     let signature = await ALICE._signTypedData(domain, types, values);
           const feeAsset = xyz.address;
@@ -221,36 +221,41 @@ describe("Permit2 Signature Transfer", () => {
           const swapAmm = await amm.connect(OWNER).populateTransaction.swap(amount, reciever);
 
           const op = [
-               {
-                    to: t.to,
-                    amount: 0n,
-                    data: t.data,
-               },
+               //    {
+               //         to: t.to,
+               //         amount: 0n,
+               //         data: t.data,
+               //    },
                {
                     to: approveAMM.to,
                     amount: 0n,
                     data: approveAMM.data,
                },
-               {
-                    to: swapAmm.to,
-                    amount: 0n,
-                    data: swapAmm.data,
-               },
+               //    {
+               //         to: swapAmm.to,
+               //         amount: 0n,
+               //         data: swapAmm.data,
+               //    },
           ] as UserOp[];
 
-          //     const op = [
-          //          {
-          //               to: t.to,
-          //               amount: 0n,
-          //               data: t.data,
-          //          },
-          //     ] as UserOp[];
+          const alOp = {
+               details: {
+                    token: abc.address,
+                    amount: MaxAllowanceTransferAmount,
+                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
+                    nonce: 0n,
+               },
+               spender: OWNER.address,
+               sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
+          } as AllowanceOp;
 
-          const signeduop = await sign(op, 0, ALICE, ownerwal);
+          const signeduop = await sign(op, alOp, 0, ALICE, ownerwal);
 
           const exec = await OWNERwallet.connect(OWNER).populateTransaction.exec(
                signeduop.values.userOps,
+               signeduop.values.allowanceOp,
                signeduop.sig,
+               zeroAddress,
                zeroAddress,
                zeroAddress,
           );

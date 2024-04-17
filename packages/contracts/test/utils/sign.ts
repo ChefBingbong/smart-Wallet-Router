@@ -10,6 +10,17 @@ export interface UserOp {
      data: Address;
 }
 
+export interface AllowanceOp {
+     details: {
+          token: Address;
+          amount: bigint;
+          expiration: bigint;
+          nonce: bigint;
+     };
+     spender: Address;
+     sigDeadline: bigint;
+}
+
 export interface Transaction {
      userOps: UserOp[];
      chainID: number;
@@ -19,6 +30,7 @@ export interface Transaction {
 //Meta Transactions
 export const sign = async (
      userOps: UserOp[],
+     allowanceOp: AllowanceOp,
      nonce: bigint,
      account: SignerWithAddress | Signer,
      verifyingContract: string,
@@ -26,17 +38,29 @@ export const sign = async (
      const domain = {
           name: "ECDSAWallet",
           version: "0.0.1",
-          chainId: 97,
+          chainId: 31337,
           verifyingContract,
      };
 
      const types = {
+          AllowanceOp: [
+               { name: "details", type: "AllowanceOpDetails" },
+               { name: "spender", type: "address" },
+               { name: "sigDeadline", type: "uint256" },
+          ],
+          AllowanceOpDetails: [
+               { name: "token", type: "address" },
+               { name: "amount", type: "uint160" },
+               { name: "expiration", type: "uint48" },
+               { name: "nonce", type: "uint48" },
+          ],
           UserOp: [
                { name: "to", type: "address" },
                { name: "amount", type: "uint256" },
                { name: "data", type: "bytes" },
           ],
           ECDSAExec: [
+               { name: "allowanceOp", type: "AllowanceOp" },
                { name: "userOps", type: "UserOp[]" },
                { name: "nonce", type: "uint256" },
                { name: "chainID", type: "uint256" },
@@ -44,19 +68,21 @@ export const sign = async (
           ],
      };
      const values = {
+          allowanceOp: allowanceOp,
           userOps: userOps,
           nonce,
-          chainID: 97,
-          sigChainID: 97,
+          chainID: 31337,
+          sigChainID: 31337,
      };
 
-     console.log(97);
+     console.log(31337);
 
      const signature = await account._signTypedData(domain, types, values);
-     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [97, signature]);
+     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [31337, signature]);
      const txn = {
+          allowanceOp: allowanceOp,
           userOps,
-          chainID: 97,
+          chainID: 31337,
           signature: sig,
      };
      return {

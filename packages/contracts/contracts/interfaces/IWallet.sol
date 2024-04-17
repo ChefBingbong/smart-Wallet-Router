@@ -13,6 +13,18 @@ interface IWallet {
           bytes data;
      }
 
+     struct AllowanceOp {
+          AllowanceOpDetails details;
+          address spender;
+          uint256 sigDeadline;
+     }
+     struct AllowanceOpDetails {
+          address token;
+          uint160 amount;
+          uint48 expiration;
+          uint48 nonce;
+     }
+
      struct TradeInfo {
           address _token0;
           address _token1;
@@ -43,6 +55,7 @@ interface IWallet {
 
      function exec(
           UserOp[] calldata userOps,
+          AllowanceOp calldata allowanceOp,
           bytes memory _signature,
           address weth,
           address v2pancakeFactory,

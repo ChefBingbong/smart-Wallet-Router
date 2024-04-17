@@ -22,10 +22,17 @@ contract ECDSAWallet is SmartWallet {
           keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
      bytes32 private constant UserOp_TYPE_HASH = keccak256("UserOp(address to,uint256 amount,bytes data)");
+     bytes32 private constant AllowanceOp_TYPE_HASH =
+          keccak256(
+               "AllowanceOp(AllowanceOpDetails details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)"
+          );
+
+     bytes32 public constant AllowanceOpDetails_TYPE_HASH =
+          keccak256("AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)");
 
      bytes32 private constant _TYPEHASH =
           keccak256(
-               "ECDSAExec(UserOp[] userOps,uint256 nonce,uint256 chainID,uint256 sigChainID)UserOp(address to,uint256 amount,bytes data)"
+               "ECDSAExec(AllowanceOp allowanceOp,UserOp[] userOps,uint256 nonce,uint256 chainID,uint256 sigChainID)AllowanceOp(AllowanceOpDetails details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)UserOp(address to,uint256 amount,bytes data)"
           );
 
      function domainSeperator(uint256 _chainID) public view returns (bytes32) {
@@ -52,10 +59,6 @@ contract ECDSAWallet is SmartWallet {
           return state().owner;
      }
 
-     //      function permit2() public view virtual override returns (address) {
-     //           return state().permit2;
-     //      }
-
      function getTradeDetails(uint256 _nonce) public view override returns (TradeInfo memory) {
           return state().walletTrades[_nonce];
      }
@@ -78,7 +81,7 @@ contract ECDSAWallet is SmartWallet {
           state().nonce++;
      }
 
-     function hash(UserOp[] memory _userOps) internal pure returns (bytes32) {
+     function hashUserOps(UserOp[] memory _userOps) internal pure returns (bytes32) {
           bytes32[] memory opHashes = new bytes32[](_userOps.length);
           for (uint i = 0; i < _userOps.length; i++) {
                opHashes[i] = keccak256(
@@ -88,11 +91,39 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encodePacked(opHashes));
      }
 
-     function _verify(UserOp[] memory _userOps, bytes memory _signature) internal view override {
+     function hashAllownceOp(AllowanceOp memory allowanceOp) internal pure returns (bytes32) {
+          bytes32 allowanceOpHash = _hashAllowanceDetails(allowanceOp.details);
+          return
+               keccak256(
+                    abi.encode(AllowanceOp_TYPE_HASH, allowanceOpHash, allowanceOp.spender, allowanceOp.sigDeadline)
+               );
+     }
+
+     function _hashAllowanceDetails(AllowanceOpDetails memory details) private pure returns (bytes32) {
+          return keccak256(abi.encode(AllowanceOpDetails_TYPE_HASH, details));
+     }
+
+     function _verify(
+          UserOp[] memory _userOps,
+          AllowanceOp memory allowanceOp,
+          bytes memory _signature
+     ) internal view override {
           (uint256 _sigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
           address signer = domainSeperator(_sigChainID)
-               .toTypedDataHash(keccak256(abi.encode(_TYPEHASH, hash(_userOps), nonce(), block.chainid, _sigChainID)))
+               .toTypedDataHash(
+                    keccak256(
+                         abi.encode(
+                              _TYPEHASH,
+                              hashAllownceOp(allowanceOp),
+                              hashUserOps(_userOps),
+                              nonce(),
+                              block.chainid,
+                              _sigChainID
+                         )
+                    )
+               )
                .recover(_sig);
+          console.log(state().owner, signer);
           require(state().owner == signer, "ECDSAWallet: failed to verify signature");
      }
 }
