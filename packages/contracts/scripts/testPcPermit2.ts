@@ -61,6 +61,14 @@ async function main(config: ScriptConfig) {
           );
           return;
      }
+     console.log(
+          await userSmartWallet.getTradeRoute(
+               Deployments[Number(chainId) as ChainId].WETH9,
+               Deployments[Number(chainId) as ChainId].Cake,
+               Deployments[Number(chainId) as ChainId].PancakeSwapV2Facotry,
+               Deployments[Number(chainId) as ChainId].PancakeSwapV3Facotry,
+          ),
+     );
 
      const CakeContract = ERC20__factory.connect(Deployments[Number(chainId) as ChainId].Cake, provider);
      const BusdContract = ERC20__factory.connect(Deployments[Number(chainId) as ChainId].Busd, provider);
@@ -97,13 +105,15 @@ async function main(config: ScriptConfig) {
      await sleep(3000);
 
      const permit2Address = permit2Contract.address as Address;
+     const allow = await permit2Contract.allowance(user, baseAsset.address, userSmartWalletAddress);
+     console.log(allow.nonce);
      const permitDetails: PermitBatch = {
           details: [
                {
                     token: baseAsset.address,
                     amount: MaxAllowanceTransferAmount,
                     expiration: toDeadline(PERMIT_EXPIRATION).toString(),
-                    nonce: 2n,
+                    nonce: allow.nonce,
                },
           ],
           spender: userSmartWalletAddress,
@@ -238,12 +248,13 @@ async function main(config: ScriptConfig) {
                     smartWalletOperations,
                     smartWalletSignature.sig,
                     Deployments[Number(chainId) as ChainId].WETH9,
+                    Deployments[Number(chainId) as ChainId].PancakeSwapV2Facotry,
                     Deployments[Number(chainId) as ChainId].PancakeSwapV3Facotry,
                );
 
           const deployerTransaction = await smartWalletSigner.sendTransaction(rawSmartWalletTx);
           smartWalletTxReceipt = await deployerTransaction.wait(1);
-     } catch (errr) {
+     } catch (error) {
           console.log(chalk.red("Transaction failed at the smart router build step"), error);
           throw new Error(parseContractError(error));
      }

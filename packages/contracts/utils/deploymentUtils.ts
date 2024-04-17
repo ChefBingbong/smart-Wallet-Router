@@ -90,8 +90,8 @@ export const Deployments: Deployments = {
      [ChainId.BSC_TESTNET]: {
           //     ECDSAWalletFactory: "0xdEcC697485974455A97D2A7bc7e14d4B49eF7a76",
           //     SmartWalletFactory: "0x8f50F96C46B51c7a891AE876f5e78fB58B8260f0",
-          ECDSAWalletFactory: "0xf40A6A3b302D465dfCBB4d7dB6B660720F1F642a",
-          SmartWalletFactory: "0x844aE9955cBd84caE8bC8c0E0FAA1191f3C43d84",
+          ECDSAWalletFactory: "0x69b00aBf8f01F1A727f5F05132f16a466c7e50ad",
+          SmartWalletFactory: "0xE9094F85917494647a777156478C788403F9262D",
           Depositor: "0x",
           Permit2: "0x89b5B5d93245f543D53CC55923DF841349a65169",
           NonceHelper: "0x8756307d06955e029be44984D310fD060B1A5A2c",
@@ -99,7 +99,7 @@ export const Deployments: Deployments = {
           Busd: "0x6F451Eb92d7dE92DdF6939d9eFCE6799246B3a4b",
           PancakeSwapV3Facotry: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
           PancakeSwapV2Facotry: "0x6725F303b657a9451d8BA641348b6761A6CC7a17",
-          WETH9: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+          WETH9: "0xCE79F78537f95a2256e76A3FE4b99D3af148833F",
      }, //0x580b978cC31aDb5065f9e8401f076b7Da7eD4b4A
      [ChainId.ZKSYNC_TESTNET]: {
           ECDSAWalletFactory: "0x",

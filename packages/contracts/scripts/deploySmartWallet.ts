@@ -1,9 +1,10 @@
-import { ChainId } from "@pancakeswap/chains";
+import { ChainId } from "@pancakeswap/sdk";
 import chalk from "chalk";
 import { ethers } from "hardhat";
 // import { Deployments, type ExtendedChainId } from "../src/constants/deploymentUtils";
 // import { sleep } from "../src/utils/sleep";
 import { ECDSAWalletFactory__factory } from "../typechain-types";
+import { Deployments } from "../utils/deploymentUtils";
 // import { PUBLIC_NODES } from "../src/provider/chains";
 
 export type SmartWalletConfig = {
@@ -16,14 +17,14 @@ export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main(config: SmartWalletConfig) {
      const chainId = config.chainId;
-     const smartRouterClient = chain;
+     //      const smartRouterClient = chain;
      const provider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.binance.org:8545/");
 
      const deployerPk = config?.smartWalletSigner;
      const smartWalletSigner = new ethers.Wallet(deployerPk, provider);
 
      const smartWalletFactory = ECDSAWalletFactory__factory.connect(
-          "0xf40A6A3b302D465dfCBB4d7dB6B660720F1F642a",
+          Deployments[Number(chainId) as ChainId].ECDSAWalletFactory,
           smartWalletSigner,
      );
 
