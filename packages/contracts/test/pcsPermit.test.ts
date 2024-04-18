@@ -67,9 +67,9 @@ describe("Permit2 Signature Transfer", () => {
           console.log(OWNER.address, ALICE.address, BOB.address);
           console.log(await ethers.provider.getNetwork());
 
-          const Permit2 = (await ethers.getContractFactory("Permit2")) as Permit2__factory;
-          permit2 = await Permit2.connect(OWNER).deploy();
-          await permit2.deployed();
+          //     const Permit2 = (await ethers.getContractFactory("Permit2")) as Permit2__factory;
+          //     permit2 = await Permit2.connect(OWNER).deploy();
+          //     await permit2.deployed();
 
           const Wallet = (await ethers.getContractFactory("SmartWalletFactory")) as SmartWalletFactory__factory;
 
@@ -126,13 +126,16 @@ describe("Permit2 Signature Transfer", () => {
      it("User should be able to deposit", async () => {
           await abc.connect(OWNER).burn("9999999000000000000000");
 
-          await abc.connect(ALICE).approve(permit2.address, MaxAllowanceTransferAmount); // approve max
+          //     await abc.connect(ALICE).approve(permit2.address, MaxAllowanceTransferAmount); // approve max
           //     await xyz.connect(ALICE).approve(permit2.address, constants.MaxUint256); // approve max
 
           const ownerwal = await factory.walletAddress(ALICE.address, 0);
+          await abc.connect(ALICE).approve(ownerwal, MaxAllowanceTransferAmount); // approve max
+          await xyz.connect(ALICE).approve(ownerwal, MaxAllowanceTransferAmount); // approve max
+
           await factory.connect(ALICE).createWallet(ALICE.address, { value: 15000000000 });
 
-          const OWNERwallet = ECDSAWallet__factory.connect(ownerwal, ALICE);
+          const OWNERwallet = await ECDSAWallet__factory.connect(ownerwal, ALICE);
           // await OWNERwallet.deployed();
           //     console.log(OWNERWallet);
           const amount = BigInt(1 * 10 ** 18);
@@ -149,6 +152,7 @@ describe("Permit2 Signature Transfer", () => {
           //                    amount: amount,
           //               },
           //               {
+
           //                    token: xyz.address,
           //                    amount: amount,
           //               },
@@ -202,25 +206,22 @@ describe("Permit2 Signature Transfer", () => {
                sigDeadline: toDeadline(PERMIT_SIG_EXPIRATION).toString(),
           };
 
-          const { domain, types, values } = AllowanceTransfer.getPermitData(permitB, permit2.address, 31337);
-          let signature = await ALICE._signTypedData(domain, types, values);
+          //     const { domain, types, values } = AllowanceTransfer.getPermitData(permitB, permit2.address, 31337);
+          //     let signature = await ALICE._signTypedData(domain, types, values);
           //     let signature = await ALICE._signTypedData(domain, types, values);
           const feeAsset = xyz.address;
-          //   const t = await OWNERwallet.connect(OWNER).populateTransaction.deposit(
-          //        amount,
-          //        abc.address,
-          //        feeAsset,
-          //        xyz.address,
-          //        ALICE.address,
-          //        permit2.address,
-          //        permitB,
-          //        (await ALICE.getGasPrice()).toBigInt(),
-          //        signature,
-          //   );
-
+          //     const t = await OWNERwallet.connect(OWNER).populateTransaction.transferFrom(
+          //          ALICE.address,
+          //          ownerwal,
+          //          amount,
+          //          abc.address,
+          //          //    ALICE.address,
+          //     );
+          console.log("aaaall", ownerwal, ALICE.address);
           const reciever = feeAsset === abc.address ? ALICE.address : ownerwal;
           const approveAMM = await abc.connect(OWNER).populateTransaction.approve(amm.address, amount);
           const swapAmm = await amm.connect(OWNER).populateTransaction.swap(amount, reciever);
+          //     transferFrom(owner(), address(this), 100000000, allowanceOp.details.token);
 
           const op = [
                //    {
@@ -234,20 +235,28 @@ describe("Permit2 Signature Transfer", () => {
                     data: approveAMM.data,
                },
                //    {
-               //         to: swapAmm.to,
+               //         to: t.to,
                //         amount: 0n,
-               //         data: swapAmm.data,
+               //         data: t.data,
                //    },
           ] as UserOp[];
 
           const alOp = {
-               details: {
-                    token: abc.address,
-                    amount: MaxAllowanceTransferAmount,
-                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
-                    nonce: 0n,
-               },
-               spender: BOB.address,
+               details: [
+                    {
+                         token: abc.address,
+                         amount: MaxAllowanceTransferAmount,
+                         expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
+                         nonce: 0n,
+                    },
+                    {
+                         token: xyz.address,
+                         amount: MaxAllowanceTransferAmount,
+                         expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
+                         nonce: 0n,
+                    },
+               ],
+               spender: ownerwal,
                sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
           } as AllowanceOp;
 
@@ -279,7 +288,9 @@ describe("Permit2 Signature Transfer", () => {
           //     );
           //     console.log(await OWNERWallet.(ALICE.address, abc.address, BOB.address));
           const x = await SmartWallet__factory.connect(alicewal, ALICE);
-          console.log(await x.allowance(ALICE.address, abc.address, BOB.address), "hhhhh");
+          console.log(await x.allowance(ALICE.address, abc.address, ownerwal), "hhhhh");
+          console.log(await x.allowance(ALICE.address, xyz.address, ownerwal), "hhhhh");
+
           //     console.log(await abc.allowance(ALICE.address, OWNER.address));
 
           // await factory.connect(ALICE).withdrawERC20(abc.address, 500, OWNERwallet.address);

@@ -16,7 +16,7 @@ export interface AllowanceOp {
           amount: bigint;
           expiration: bigint;
           nonce: bigint;
-     };
+     }[];
      spender: Address;
      sigDeadline: bigint;
 }
@@ -44,7 +44,7 @@ export const sign = async (
 
      const types = {
           AllowanceOp: [
-               { name: "details", type: "AllowanceOpDetails" },
+               { name: "details", type: "AllowanceOpDetails[]" },
                { name: "spender", type: "address" },
                { name: "sigDeadline", type: "uint256" },
           ],

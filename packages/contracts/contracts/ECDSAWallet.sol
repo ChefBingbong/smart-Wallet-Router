@@ -9,33 +9,32 @@ import {IERC1271} from "./interfaces/IERC1271.sol";
 
 contract ECDSAWallet is SmartWallet {
      using ECDSAUpgradeable for bytes32;
-     bytes32 private constant ECDSA_WALLET_STORAGE_POSITION = keccak256("wallet.ecdsa.v1");
 
      struct ECDSAWalletState {
           address owner;
           uint96 nonce;
-          mapping(uint256 => TradeInfo) walletTrades;
      }
 
      bytes32 constant UPPER_BIT_MASK = (0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
-
+     bytes32 private constant ECDSA_WALLET_STORAGE_POSITION = keccak256("wallet.ecdsa.v1");
      bytes32 private constant HASHED_NAME = keccak256(bytes("ECDSAWallet"));
      bytes32 private constant HASHED_VERSION = keccak256(bytes("0.0.1"));
+
      bytes32 private constant TYPE_HASH =
           keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
      bytes32 private constant UserOp_TYPE_HASH = keccak256("UserOp(address to,uint256 amount,bytes data)");
-     bytes32 private constant AllowanceOp_TYPE_HASH =
-          keccak256(
-               "AllowanceOp(AllowanceOpDetails details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)"
-          );
 
      bytes32 public constant AllowanceOpDetails_TYPE_HASH =
           keccak256("AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)");
 
+     bytes32 public constant AllowanceOpBatch_TYPE_HASH =
+          keccak256(
+               "AllowanceOp(AllowanceOpDetails[] details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)"
+          );
      bytes32 private constant _TYPEHASH =
           keccak256(
-               "ECDSAExec(AllowanceOp allowanceOp,UserOp[] userOps,uint256 nonce,uint256 chainID,uint256 sigChainID)AllowanceOp(AllowanceOpDetails details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)UserOp(address to,uint256 amount,bytes data)"
+               "ECDSAExec(AllowanceOp allowanceOp,UserOp[] userOps,uint256 nonce,uint256 chainID,uint256 sigChainID)AllowanceOp(AllowanceOpDetails[] details,address spender,uint256 sigDeadline)AllowanceOpDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)UserOp(address to,uint256 amount,bytes data)"
           );
 
      function domainSeperator(uint256 _chainID) public view returns (bytes32) {
@@ -62,22 +61,8 @@ contract ECDSAWallet is SmartWallet {
           return state().owner;
      }
 
-     function getTradeDetails(uint256 _nonce) public view override returns (TradeInfo memory) {
-          return state().walletTrades[_nonce];
-     }
-
      function nonce() public view virtual override returns (uint256) {
           return state().nonce;
-     }
-
-     function addNewTradeDetails(
-          address _token0,
-          address _token1,
-          address _feeToken,
-          uint256 _amountIn,
-          uint256 _gasPrice
-     ) internal override {
-          state().walletTrades[nonce()] = TradeInfo(_token0, _token1, _feeToken, _amountIn, _gasPrice);
      }
 
      function _incrementNonce() internal override {
@@ -94,11 +79,20 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encodePacked(opHashes));
      }
 
-     function hashAllownceOp(AllowanceOp memory allowanceOp) internal pure returns (bytes32) {
-          bytes32 allowanceOpHash = _hashAllowanceDetails(allowanceOp.details);
+     function hashAllownceOp(AllowanceOp memory allowanceOps) internal pure returns (bytes32) {
+          uint256 numPermits = allowanceOps.details.length;
+          bytes32[] memory allowanceHashes = new bytes32[](numPermits);
+          for (uint256 i = 0; i < numPermits; ++i) {
+               allowanceHashes[i] = _hashAllowanceDetails(allowanceOps.details[i]);
+          }
           return
                keccak256(
-                    abi.encode(AllowanceOp_TYPE_HASH, allowanceOpHash, allowanceOp.spender, allowanceOp.sigDeadline)
+                    abi.encode(
+                         AllowanceOpBatch_TYPE_HASH,
+                         keccak256(abi.encodePacked(allowanceHashes)),
+                         allowanceOps.spender,
+                         allowanceOps.sigDeadline
+                    )
                );
      }
 
@@ -147,34 +141,12 @@ contract ECDSAWallet is SmartWallet {
                }
                address signer = ecrecover(hash, v, r, s);
 
-               console.log(signer, claimedSigner, "yyyyyyyyyyyyyyyy");
-
                if (signer == address(0)) revert("Invalid Signature");
                if (signer != claimedSigner) revert("Signer is not Smart Wallet Owner");
           } else {
-               //  console.log(signer, claimedSigner);
                bytes4 magicValue = IERC1271(claimedSigner).isValidSignature(hash, signature);
-               //   console.log(magicValue);
 
                if (magicValue != IERC1271.isValidSignature.selector) revert("Signer is not a valid contract signer");
           }
      }
-
-     // function deposit(
-     //      uint256 _amount,
-     //      address _token,
-     //      address _feeAsset,
-     //      address _outputToken,
-     //      address _user,
-     //      address _permit2A,
-     //      IAllowanceTransfer.PermitBatch calldata _permit,
-     //      uint256 _gasPrice,
-     //      bytes calldata _signature
-     // ) external override {}
-
-     // function allowance(
-     //      address user,
-     //      address token,
-     //      address spender
-     // ) external view override returns (uint160 amount, uint48 expiration, uint48 nonce);
 }

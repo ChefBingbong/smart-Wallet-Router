@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {IWallet} from "../interfaces/IWallet.sol";
+import "hardhat/console.sol";
 
 interface IDAIPermit {
      /// @param holder The address of the token owner.
@@ -149,47 +150,7 @@ library Permit2Lib {
           if (!success) {
                // If the initial DOMAIN_SEPARATOR call on the token failed or a
                // subsequent call to permit failed, fall back to using Permit2.
-               simplePermit2(token, owner, spender, amount, deadline, v, r, s, _permit2Address);
+               // simplePermit2(token, owner, spender, amount, deadline, v, r, s, _permit2Address);
           }
-     }
-
-     /// @notice Simple unlimited permit on the Permit2 contract.
-     /// @param token The token to permit spending.
-     /// @param owner The user to permit spending from.
-     /// @param spender The user to permit spending to.
-     /// @param amount The amount to permit spending.
-     /// @param deadline  The timestamp after which the signature is no longer valid.
-     /// @param v Must produce valid secp256k1 signature from the owner along with r and s.
-     /// @param r Must produce valid secp256k1 signature from the owner along with v and s.
-     /// @param s Must produce valid secp256k1 signature from the owner along with r and v.
-     function simplePermit2(
-          ERC20 token,
-          address owner,
-          address spender,
-          uint256 amount,
-          uint256 deadline,
-          uint8 v,
-          bytes32 r,
-          bytes32 s,
-          address payable _permit2Address
-     ) internal {
-          (, , uint48 nonce) = IWallet(_permit2Address).allowance(owner, address(token), spender);
-
-          IWallet(_permit2Address).permit(
-               owner,
-               IWallet.AllowanceOp({
-                    details: IWallet.AllowanceOpDetails({
-                         token: address(token),
-                         amount: amount.toUint160(),
-                         // Use an unlimited expiration because it most
-                         // closely mimics how a standard approval works.
-                         expiration: type(uint48).max,
-                         nonce: nonce
-                    }),
-                    spender: spender,
-                    sigDeadline: deadline
-               }),
-               bytes.concat(r, s, bytes1(v))
-          );
      }
 }
