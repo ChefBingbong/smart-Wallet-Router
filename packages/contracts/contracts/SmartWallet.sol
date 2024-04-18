@@ -34,6 +34,8 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
      // to calculate gasCost for sending fees atomically
      function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp, address weth) internal virtual;
 
+     // integrators can have flexibility do define their own
+     // verify protocol, perhaps args should be dynamic too
      function _verify(
           UserOp[] memory userOps,
           AllowanceOp memory allowanceOp,

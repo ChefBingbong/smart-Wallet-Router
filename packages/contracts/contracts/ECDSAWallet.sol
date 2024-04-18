@@ -15,7 +15,8 @@ import {Permit2Lib} from "./libraries/WalletPermitHelper.sol";
 // funtionality to enable direct tranerring of assets from owners EOA to their smart wallet
 // in one signature. This is idea for swap transactions. This impl also requires user pys
 //rhe reylayer back the gas cost for exec execution. this functionality is implemented
-// in the optional _walletExecCallback() func
+// in the optional _walletExecCallback() func, users gas pay relayer back in Native and
+// ERC20 assets
 contract ECDSAWallet is SmartWallet {
      using SafeTransferLib for ERC20;
      using Allowance for PackedAllowance;
@@ -32,6 +33,11 @@ contract ECDSAWallet is SmartWallet {
           uint96 nonce;
      }
 
+     struct TokenSpenderPair {
+          address token;
+          address spender;
+     }
+
      function __ECDSAWallet_init(address _owner) public initializer {
           __SmartWallet_init_unchained();
           __ECDSAWallet_init_unchained(_owner);
@@ -45,6 +51,8 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encode(TYPE_HASH, HASHED_NAME, HASHED_VERSION, _chainID, address(this)));
      }
 
+     // erc1967 proxy require state vars be initialised with storage pointer
+     // creating normal state vars cant be read by individual proxy instances
      function state() internal pure returns (ECDSAWalletState storage s) {
           bytes32 position = ECDSA_WALLET_STORAGE_POSITION;
           assembly {
@@ -52,6 +60,11 @@ contract ECDSAWallet is SmartWallet {
           }
      }
 
+     // here we combine the uniswap permitbatch allowance ransfer operation with
+     // another struct op which holds the calldata or batched txs in an array.
+     // the smart wallet uses permit to transfer uses tokens to custody of users wallet. then the
+     // ops proceed to run as being evoked by the relayer (Smart Wallet Factory Deployer) and called
+     //by users sw as msg.sender.
      bytes32 constant UPPER_BIT_MASK = (0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
      bytes32 private constant ECDSA_WALLET_STORAGE_POSITION = keccak256("wallet.ecdsa.v1");
      bytes32 private constant HASHED_NAME = keccak256(bytes("ECDSAWallet"));
@@ -91,22 +104,35 @@ contract ECDSAWallet is SmartWallet {
           return keccak256(abi.encode(AllowanceOpDetails_TYPE_HASH, details));
      }
 
+     // implementation of cleanu function after smart wallet calls have finished. cleanup involves refunding the relayer
+     // for paying the gass fees for the exec calls. this needs to be improved
      function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp, address weth) internal override {
-          console.log(execGasUse, "exec gas");
-          if (block.chainid == 31337) return;
-          address feeToken = allowanceOp.details[1].token;
-          uint256 gasCostInNative = (250000 + execGasUse - gasleft()) * 5 * 10 ** 9;
-          uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
-               weth,
-               feeToken,
-               PancakeV2Factory,
-               PancakeV3Factory,
-               uint128(gasCostInNative)
-          );
+          if (block.chainid != 31337) {
+               address feeToken = allowanceOp.details[1].token;
+               uint256 gasCostInNative = (250000 + execGasUse - gasleft()) * 5 * 10 ** 9;
+               uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
+                    weth,
+                    feeToken,
+                    PancakeV2Factory,
+                    PancakeV3Factory,
+                    uint128(gasCostInNative)
+               );
 
-          _transfer(owner(), msg.sender, uint160(gasCostInFeeAsset), feeToken);
+               _transfer(owner(), msg.sender, uint160(gasCostInFeeAsset), feeToken);
+          }
+          AllowanceOpDetails[] memory details = allowanceOp.details;
+          // reevoke any leftover allowance to posibility unintended spending
+          //from result of infinite approval. this requires loop, but is more convieniant
+          // than trying to estimaye exact gas ahead of time for the second fee transfer which
+          //is not possible to get exact same amount ahead of time anyways.
+          for (uint8 i = 0; i < allowanceOp.details.length; i++) {
+               allowance[owner()][details[i].token][allowanceOp.spender].amount = 0;
+          }
      }
 
+     // new verify func i borrowd from uni permit2. old one ws fine but want to remain consistent since
+     // im integrating custom perit for this wallet. a users smart wallet is the only entity that can permit
+     // spenders which is a measure against attack vectors. however transfer from can still be called externally
      function _verify(
           UserOp[] memory _userOps,
           AllowanceOp memory allowanceOp,
