@@ -4,20 +4,22 @@ import { expect } from "chai";
 // import { it } from "mocha";
 // import { SmartWallet, SmartWalletFactory, ABC, XYZ } from "../../typechain-types";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import type {
-     SmartWallet,
-     SmartWalletFactory,
-     ABC,
-     XYZ,
-     ECDSAWalletFactory,
-     ECDSAWalletFactory__factory,
-     SmartWalletFactory__factory,
-     IWallet,
-     ECDSAWallet,
-     Permit2__factory,
-     Permit2,
-     AMMSwap,
-     AMMSwap__factory,
+import {
+     type SmartWallet,
+     type SmartWalletFactory,
+     type ABC,
+     type XYZ,
+     type ECDSAWalletFactory,
+     type ECDSAWalletFactory__factory,
+     type SmartWalletFactory__factory,
+     type IWallet,
+     type ECDSAWallet,
+     type Permit2__factory,
+     type Permit2,
+     type AMMSwap,
+     type AMMSwap__factory,
+     SmartWallet__factory,
+     ECDSAWallet__factory,
 } from "../typechain-types";
 import { AllowanceOp, UserOp, sign } from "./utils/sign";
 import {
@@ -130,7 +132,7 @@ describe("Permit2 Signature Transfer", () => {
           const ownerwal = await factory.walletAddress(ALICE.address, 0);
           await factory.connect(ALICE).createWallet(ALICE.address, { value: 15000000000 });
 
-          const OWNERwallet = (await ethers.getContractAt("ECDSAWallet", ownerwal)) as ECDSAWallet;
+          const OWNERwallet = ECDSAWallet__factory.connect(ownerwal, ALICE);
           // await OWNERwallet.deployed();
           //     console.log(OWNERWallet);
           const amount = BigInt(1 * 10 ** 18);
@@ -204,17 +206,17 @@ describe("Permit2 Signature Transfer", () => {
           let signature = await ALICE._signTypedData(domain, types, values);
           //     let signature = await ALICE._signTypedData(domain, types, values);
           const feeAsset = xyz.address;
-          const t = await OWNERwallet.connect(OWNER).populateTransaction.deposit(
-               amount,
-               abc.address,
-               feeAsset,
-               xyz.address,
-               ALICE.address,
-               permit2.address,
-               permitB,
-               (await ALICE.getGasPrice()).toBigInt(),
-               signature,
-          );
+          //   const t = await OWNERwallet.connect(OWNER).populateTransaction.deposit(
+          //        amount,
+          //        abc.address,
+          //        feeAsset,
+          //        xyz.address,
+          //        ALICE.address,
+          //        permit2.address,
+          //        permitB,
+          //        (await ALICE.getGasPrice()).toBigInt(),
+          //        signature,
+          //   );
 
           const reciever = feeAsset === abc.address ? ALICE.address : ownerwal;
           const approveAMM = await abc.connect(OWNER).populateTransaction.approve(amm.address, amount);
@@ -245,7 +247,7 @@ describe("Permit2 Signature Transfer", () => {
                     expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
                     nonce: 0n,
                },
-               spender: OWNER.address,
+               spender: BOB.address,
                sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
           } as AllowanceOp;
 
@@ -275,7 +277,9 @@ describe("Permit2 Signature Transfer", () => {
           //               .connect(ALICE)
           //               .approve(xyz.address, factory.address, MaxAllowanceTransferAmount, MaxAllowanceExpiration),
           //     );
-          console.log(await permit2.allowance(alicewal, xyz.address, OWNER.address));
+          //     console.log(await OWNERWallet.(ALICE.address, abc.address, BOB.address));
+          const x = await SmartWallet__factory.connect(alicewal, ALICE);
+          console.log(await x.allowance(ALICE.address, abc.address, BOB.address), "hhhhh");
           //     console.log(await abc.allowance(ALICE.address, OWNER.address));
 
           // await factory.connect(ALICE).withdrawERC20(abc.address, 500, OWNERwallet.address);

@@ -159,4 +159,22 @@ contract ECDSAWallet is SmartWallet {
                if (magicValue != IERC1271.isValidSignature.selector) revert("Signer is not a valid contract signer");
           }
      }
+
+     // function deposit(
+     //      uint256 _amount,
+     //      address _token,
+     //      address _feeAsset,
+     //      address _outputToken,
+     //      address _user,
+     //      address _permit2A,
+     //      IAllowanceTransfer.PermitBatch calldata _permit,
+     //      uint256 _gasPrice,
+     //      bytes calldata _signature
+     // ) external override {}
+
+     // function allowance(
+     //      address user,
+     //      address token,
+     //      address spender
+     // ) external view override returns (uint160 amount, uint48 expiration, uint48 nonce);
 }
