@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
-import {IAllowanceTransfer} from "../permit2/interfaces/IAllowanceTransfer.sol";
-import {IPermit2} from "../permit2/interfaces/IPermit2.sol";
+import {IAllowanceTransfer} from "../../permit2/interfaces/IAllowanceTransfer.sol";
+import {IPermit2} from "../../permit2/interfaces/IPermit2.sol";
 
 interface IWallet {
      event LogReceivedEther(address indexed _from, uint256 _amount);

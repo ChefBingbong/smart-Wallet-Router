@@ -5,6 +5,7 @@ pragma solidity ^0.8.6;
 import "./SmartWallet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "hardhat/console.sol";
+import {IERC1271} from "./interfaces/IERC1271.sol";
 
 contract ECDSAWallet is SmartWallet {
      using ECDSAUpgradeable for bytes32;
@@ -15,6 +16,8 @@ contract ECDSAWallet is SmartWallet {
           uint96 nonce;
           mapping(uint256 => TradeInfo) walletTrades;
      }
+
+     bytes32 constant UPPER_BIT_MASK = (0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 
      bytes32 private constant HASHED_NAME = keccak256(bytes("ECDSAWallet"));
      bytes32 private constant HASHED_VERSION = keccak256(bytes("0.0.1"));
@@ -109,21 +112,51 @@ contract ECDSAWallet is SmartWallet {
           bytes memory _signature
      ) internal view override {
           (uint256 _sigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
-          address signer = domainSeperator(_sigChainID)
-               .toTypedDataHash(
-                    keccak256(
-                         abi.encode(
-                              _TYPEHASH,
-                              hashAllownceOp(allowanceOp),
-                              hashUserOps(_userOps),
-                              nonce(),
-                              block.chainid,
-                              _sigChainID
-                         )
+          bytes32 dataHash = domainSeperator(_sigChainID).toTypedDataHash(
+               keccak256(
+                    abi.encode(
+                         _TYPEHASH,
+                         hashAllownceOp(allowanceOp),
+                         hashUserOps(_userOps),
+                         nonce(),
+                         block.chainid,
+                         _sigChainID
                     )
                )
-               .recover(_sig);
-          console.log(state().owner, signer);
-          require(state().owner == signer, "ECDSAWallet: failed to verify signature");
+          );
+          _verifySigner(_sig, dataHash, state().owner);
+     }
+
+     function _verifySigner(bytes memory signature, bytes32 hash, address claimedSigner) private view {
+          bytes32 r;
+          bytes32 s;
+          uint8 v;
+
+          if (claimedSigner.code.length == 0) {
+               if (signature.length == 65) {
+                    (r, s) = abi.decode(signature, (bytes32, bytes32));
+                    v = uint8(signature[64]);
+               } else if (signature.length == 64) {
+                    // EIP-2098
+                    bytes32 vs;
+                    (r, vs) = abi.decode(signature, (bytes32, bytes32));
+                    s = vs & UPPER_BIT_MASK;
+                    v = uint8(uint256(vs >> 255)) + 27;
+               } else {
+                    revert("Signature length is Invalid");
+               }
+               address signer = ecrecover(hash, v, r, s);
+
+               console.log(signer, claimedSigner, "yyyyyyyyyyyyyyyy");
+
+               if (signer == address(0)) revert("Invalid Signature");
+               if (signer != claimedSigner) revert("Signer is not Smart Wallet Owner");
+          } else {
+               //  console.log(signer, claimedSigner);
+               bytes4 magicValue = IERC1271(claimedSigner).isValidSignature(hash, signature);
+               //   console.log(magicValue);
+
+               if (magicValue != IERC1271.isValidSignature.selector) revert("Signer is not a valid contract signer");
+          }
      }
 }

@@ -2,11 +2,11 @@
 pragma solidity ^0.8.6;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IWallet.sol";
-import "./priceOracle/feesHelperLib.sol";
+import "../priceOracle/feesHelperLib.sol";
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPermit2} from "./permit2/interfaces/IPermit2.sol";
-import {IAllowanceTransfer} from "./permit2/interfaces/IAllowanceTransfer.sol";
+import {IPermit2} from "../permit2/interfaces/IPermit2.sol";
+import {IAllowanceTransfer} from "../permit2/interfaces/IAllowanceTransfer.sol";
 
 abstract contract SmartWallet is UUPSUpgradeable, IWallet {
      IPermit2 public PERMIT2;
