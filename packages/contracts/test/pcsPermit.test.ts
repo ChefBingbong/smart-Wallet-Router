@@ -267,8 +267,6 @@ describe("Permit2 Signature Transfer", () => {
                signeduop.values.allowanceOp,
                signeduop.sig,
                zeroAddress,
-               zeroAddress,
-               zeroAddress,
           );
           const alicewal = await factory.walletAddress(ALICE.address, 0);
 

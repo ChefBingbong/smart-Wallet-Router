@@ -5,17 +5,10 @@ import "./interfaces/IWallet.sol";
 import "./priceOracle/feesHelperLib.sol";
 import "hardhat/console.sol";
 
-import {ERC20} from "solmate/src/tokens/ERC20.sol";
-import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
-import {Allowance} from "./libraries/WalletAllowance.sol";
-import {Permit2Lib} from "./libraries/WalletPermitHelper.sol";
-
+// this contract is the base implementation of the Smart wallet as serves as
+// a template that can be built upon in inheriting implementation contracts that can
+// add therir own custom functionalities
 abstract contract SmartWallet is UUPSUpgradeable, IWallet {
-     using SafeTransferLib for ERC20;
-     using Allowance for PackedAllowance;
-
-     mapping(address => mapping(address => mapping(address => PackedAllowance))) public allowance;
-
      receive() external payable {
           emit LogReceivedEther(msg.sender, msg.value);
      }
@@ -30,28 +23,31 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           }
      }
 
-     function _verify(
-          UserOp[] memory userOps,
-          AllowanceOp memory allowanceOp,
-          bytes memory _signature
-     ) internal view virtual;
-
+     // virtual functions that are rquired to be implemented
      function _incrementNonce() internal virtual;
 
      function nonce() public view virtual returns (uint256);
 
      function owner() public view virtual returns (address);
 
+     // really an optional param but required for users who may want
+     // to calculate gasCost for sending fees atomically
+     function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp, address weth) internal virtual;
+
+     function _verify(
+          UserOp[] memory userOps,
+          AllowanceOp memory allowanceOp,
+          bytes memory _signature
+     ) internal virtual;
+
      function exec(
           UserOp[] calldata userOps,
           AllowanceOp calldata allowanceOp,
           bytes calldata _signature,
-          address weth,
-          address v2pancakeFactory,
-          address v3pancakeFactory
+          address weth
      ) external {
           uint256 gasStart = gasleft();
-          _verifyWalletExec(userOps, allowanceOp, _signature);
+          _verify(userOps, allowanceOp, _signature);
           _incrementNonce();
 
           for (uint32 i = 0; i < userOps.length; i++) {
@@ -59,23 +55,11 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
                _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
           }
 
-          if (block.chainid == 31337) return;
-          address feeToken = allowanceOp.details[1].token;
-          uint256 gasCostInNative = (250000 + gasStart - gasleft()) * 5 * 10 ** 9;
-          uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
-               weth,
-               feeToken,
-               v2pancakeFactory,
-               v3pancakeFactory,
-               uint128(gasCostInNative)
-          );
-
-          _transfer(owner(), msg.sender, uint160(gasCostInFeeAsset), feeToken);
+          _walletExecCallback(gasStart, allowanceOp, weth);
      }
 
+     // if user wants to execute themselves we dont need sig or verify
      function execFomEoa(UserOp[] calldata userOps) external {
-          require(msg.sender == owner(), "external exec can only be called by wallet owner");
-
           for (uint32 i = 0; i < userOps.length; i++) {
                require(address(this).balance >= userOps[i].amount, "SmartWallet: insufficient base asset balance");
                _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
@@ -95,63 +79,5 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
 
      function _authorizeUpgrade(address) internal view override {
           require(msg.sender == address(this));
-     }
-
-     function approve(address token, address spender, uint160 amount, uint48 expiration) external {
-          PackedAllowance storage allowed = allowance[msg.sender][token][spender];
-          allowed.updateAmountAndExpiration(amount, expiration);
-          emit Approval(msg.sender, token, spender, amount, expiration);
-     }
-
-     function _verifyWalletExec(
-          UserOp[] memory userOps,
-          AllowanceOp memory allowanceOp,
-          bytes calldata signature
-     ) internal {
-          _verify(userOps, allowanceOp, signature);
-
-          address spender = allowanceOp.spender;
-          unchecked {
-               uint256 length = allowanceOp.details.length;
-               for (uint256 i = 0; i < length; ++i) {
-                    if (allowanceOp.spender != address(0)) {
-                         require(block.timestamp < allowanceOp.sigDeadline, "permit signature has expired");
-
-                         uint48 nonce = allowanceOp.details[i].nonce;
-                         address token = allowanceOp.details[i].token;
-                         uint160 amount = allowanceOp.details[i].amount;
-                         uint48 expiration = allowanceOp.details[i].expiration;
-
-                         PackedAllowance storage allowed = allowance[owner()][token][allowanceOp.spender];
-
-                         if (allowed.nonce != nonce) revert("nonve for allowance op is invalid");
-
-                         allowed.updateAll(amount, expiration, nonce);
-                         emit Permit(owner(), token, allowanceOp.spender, amount, expiration, nonce);
-                    }
-               }
-          }
-     }
-
-     function transferFrom(address from, address to, uint160 amount, address token) external {
-          _transfer(from, to, amount, token);
-     }
-
-     function _transfer(address from, address to, uint160 amount, address token) private {
-          PackedAllowance storage allowed = allowance[from][token][msg.sender];
-
-          if (block.timestamp > allowed.expiration) revert("transfer allowance has expired");
-
-          uint256 maxAmount = allowed.amount;
-          if (maxAmount != type(uint160).max) {
-               if (amount > maxAmount) {
-                    revert("failed to transfer, insufficient allowance");
-               } else {
-                    unchecked {
-                         allowed.amount = uint160(maxAmount) - amount;
-                    }
-               }
-          }
-          ERC20(token).safeTransferFrom(from, to, amount);
      }
 }

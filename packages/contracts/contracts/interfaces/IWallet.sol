@@ -58,9 +58,7 @@ interface IWallet {
           UserOp[] calldata userOps,
           AllowanceOp calldata allowanceOp,
           bytes memory _signature,
-          address weth,
-          address v2pancakeFactory,
-          address v3pancakeFactory
+          address weth
      ) external;
 
      function execFomEoa(UserOp[] calldata userOps) external;
