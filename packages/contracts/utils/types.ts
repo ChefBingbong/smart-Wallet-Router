@@ -1,18 +1,19 @@
 import type { Address } from "viem";
 
 export interface UserOp {
-     to: Address;
-     amount: bigint;
-     data: Address;
+  to: Address;
+  amount: bigint;
+  chainId: bigint;
+  data: Address;
 }
 
 export interface AllowanceOp {
-     details: {
-          token: Address;
-          amount: bigint;
-          expiration: bigint;
-          nonce: bigint;
-     }[];
-     spender: Address;
-     sigDeadline: bigint;
+  details: {
+    token: Address;
+    amount: bigint;
+    expiration: bigint;
+    nonce: bigint;
+  }[];
+  spender: Address;
+  sigDeadline: bigint;
 }

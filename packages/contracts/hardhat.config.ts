@@ -30,8 +30,8 @@ const config: HardhatUserConfig = {
       accounts: env.getAccounts("bnb-testnet"),
     },
     ethereumTestnet: {
-      url: "https://goerli.infura.io/v3/e110322e378a4f268172084e63ac8b8d",
-      accounts: env.getAccounts("bnb-testnet"),
+      url: "https://rpc.sepolia.org",
+      accounts: env.getAccounts("ethereum-testnet"),
     },
     polygonMainnet: {
       url: "https://polygon-mainnet.infura.io/v3/e110322e378a4f268172084e63ac8b8d",
@@ -53,9 +53,9 @@ const config: HardhatUserConfig = {
       url: "https://arbitrum-mainnet.infura.io/v3/47b89f1cf0cd47419f9a57674278610b",
       accounts: env.getAccounts("bnb-testnet"),
     },
-    arbitrumTestnet: {
-      url: "https://arbitrum-goerli.infura.io/v3/47b89f1cf0cd47419f9a57674278610b",
-      accounts: env.getAccounts("bnb-testnet"),
+    arbitrumSepoilla: {
+      url: "https://public.stackup.sh/api/v1/node/arbitrum-sepolia",
+      accounts: env.getAccounts("arbitrum-sepoilla"),
     },
     klaytnMainnet: {
       url: "https://public-node-api.klaytnapi.com/v1/cypress",
@@ -166,11 +166,14 @@ const config: HardhatUserConfig = {
         "ethereum-rinkeby",
         "ethereum-kovan",
         "ethereum-goerli",
+        "ethereum-testnet",
+        "ethereumTestnet",
         "ethereum",
         "optimism",
         "optimism-kovan",
         "arbitrum",
         "arbitrum-rinkeby",
+        "arbitrum-sepoilla",
         "polygon",
         "polygon-mumbai",
         "bnb",

@@ -36,16 +36,33 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
 
   // integrators can have flexibility do define their own
   // verify protocol, perhaps args should be dynamic too
-  function _verify(UserOp[] memory userOps, AllowanceOp memory allowanceOp, bytes memory _signature) internal virtual;
+  function _verify(
+    UserOp[] memory userOps,
+    UserOp[] memory bridgeOps,
+    AllowanceOp memory allowanceOp,
+    bytes memory _signature,
+    uint256 chainId,
+    uint256 bridgeChainId
+  ) internal virtual;
 
-  function exec(UserOp[] calldata userOps, AllowanceOp calldata allowanceOp, bytes calldata _signature) external {
+  function exec(
+    UserOp[] calldata userOps,
+    UserOp[] calldata bridgeOps,
+    AllowanceOp calldata allowanceOp,
+    bytes calldata _signature,
+    uint256 chainId,
+    uint256 bridgeChainId
+  ) external {
     uint256 gasStart = gasleft();
-    _verify(userOps, allowanceOp, _signature);
+    _verify(userOps, bridgeOps, allowanceOp, _signature, chainId, bridgeChainId);
     _incrementNonce();
 
-    for (uint32 i = 0; i < userOps.length; i++) {
+    UserOp[] memory ops = userOps;
+    if (block.chainid == bridgeChainId && chainId != bridgeChainId) ops = bridgeOps;
+
+    for (uint32 i = 0; i < ops.length; i++) {
       require(address(this).balance >= userOps[i].amount, "SmartWallet: insufficient base asset balance");
-      _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
+      _call(payable(ops[i].to), ops[i].amount, ops[i].data);
     }
 
     _walletExecCallback(gasStart, allowanceOp);
