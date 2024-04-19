@@ -1,7 +1,7 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import type { DeployFunction } from "hardhat-deploy/types";
-import { PERMIT2_ADDRESS } from "@uniswap/permit2-sdk";
-import { getPermit2Address } from "@pancakeswap/permit2-sdk";
+import { shouldVerifyContract } from "../utils/deploy";
+import { verify } from "../scripts/utils/verify";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
      const { deploy, get } = hre.deployments;
@@ -16,10 +16,23 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           args: [smartWallet.address],
           log: true,
           skipIfAlreadyDeployed: false,
-          deterministicDeployment: "0x0005",
+          deterministicDeployment: "0x000019",
      });
-     // await res.d
+
      console.log("ECDSAWalletFactory Address", res.address);
+     console.log("checking if contracct should be verified");
+
+     //      const shouldVerify = await shouldVerifyContract(res);
+     //      if (shouldVerify) {
+     //           console.log("verifyng contract...");
+
+     //           await verify({
+     //                name: "ECDSAWalletFactory",
+     //                path: "contracts/ECDSAWalletFactory.sol:ECDSAWalletFactory",
+     //           });
+     //           console.log("sucessuflly verified ECDSAWalletFactory");
+     //      }
+     //      console.log("contract does not need t be verified");
 };
 export default func;
 

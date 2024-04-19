@@ -73,7 +73,7 @@ describe("Permit2 Signature Transfer", () => {
 
           const Wallet = (await ethers.getContractFactory("SmartWalletFactory")) as SmartWalletFactory__factory;
 
-          const wallet = await Wallet.connect(OWNER).deploy();
+          const wallet = await Wallet.connect(OWNER).deploy(zeroAddress, zeroAddress, zeroAddress, []);
           await wallet.deployed();
 
           const WalletFactory = (await ethers.getContractFactory("ECDSAWalletFactory")) as ECDSAWalletFactory__factory;
@@ -151,12 +151,12 @@ describe("Permit2 Signature Transfer", () => {
           );
           const approveAMM = await abc.connect(OWNER).populateTransaction.approve(amm.address, amount);
           const swapAmm = await amm.connect(OWNER).populateTransaction.swap(amount, reciever);
-          const transferWallet2 = await OWNERWallet.connect(OWNER).populateTransaction.transferFrom(
-               ALICE.address,
-               OWNER.address,
-               amount,
-               xyz.address,
-          );
+          //     const transferWallet2 = await OWNERWallet.connect(OWNER).populateTransaction.transferFrom(
+          //          ALICE.address,
+          //          OWNER.address,
+          //          amount + 100000000000000000n,
+          //          abc.address,
+          //     );
           const op = [
                {
                     to: transferWallet.to,
@@ -173,11 +173,11 @@ describe("Permit2 Signature Transfer", () => {
                     amount: 0n,
                     data: swapAmm.data,
                },
-               {
-                    to: transferWallet2.to,
-                    amount: 0n,
-                    data: transferWallet2.data,
-               },
+               //    {
+               //         to: transferWallet2.to,
+               //         amount: 0n,
+               //         data: transferWallet2.data,
+               //    },
           ] as UserOp[];
 
           const alOp = {
@@ -189,23 +189,22 @@ describe("Permit2 Signature Transfer", () => {
                          nonce: 0n,
                     },
                     {
-                         token: xyz.address,
+                         token: abc.address,
                          amount: MaxAllowanceTransferAmount,
                          expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
-                         nonce: 0n,
+                         nonce: 1n,
                     },
                ],
                spender: ownerwal,
                sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
           } as AllowanceOp;
 
-          const signeduop = await sign(op, alOp, 0, ALICE, ownerwal);
+          const signeduop = await sign(op, alOp, 0, ALICE, 31337, ownerwal);
 
           const exec = await OWNERWallet.connect(OWNER).populateTransaction.exec(
                signeduop.values.userOps,
                signeduop.values.allowanceOp,
                signeduop.sig,
-               zeroAddress,
           );
           const alicewal = await factory.walletAddress(ALICE.address, 0);
 

@@ -2,8 +2,9 @@
 pragma solidity ^0.8.6;
 
 import "./SmartWallet.sol";
+import "./SmartWalletFactory.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import "hardhat/console.sol";
+
 import {IERC1271} from "./interfaces/IERC1271.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
@@ -18,13 +19,12 @@ import {Permit2Lib} from "./libraries/WalletPermitHelper.sol";
 // in the optional _walletExecCallback() func, users gas pay relayer back in Native and
 // ERC20 assets
 contract ECDSAWallet is SmartWallet {
+     SmartWalletFactory factory;
+
      using SafeTransferLib for ERC20;
      using Allowance for PackedAllowance;
 
      mapping(address => mapping(address => mapping(address => PackedAllowance))) public allowance;
-
-     address public constant PancakeV2Factory = 0x6725F303b657a9451d8BA641348b6761A6CC7a17;
-     address public constant PancakeV3Factory = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865;
 
      using ECDSAUpgradeable for bytes32;
 
@@ -41,6 +41,7 @@ contract ECDSAWallet is SmartWallet {
      function __ECDSAWallet_init(address _owner) public initializer {
           __SmartWallet_init_unchained();
           __ECDSAWallet_init_unchained(_owner);
+          factory = SmartWalletFactory(msg.sender);
      }
 
      function __ECDSAWallet_init_unchained(address _owner) internal onlyInitializing {
@@ -106,20 +107,35 @@ contract ECDSAWallet is SmartWallet {
 
      // implementation of cleanu function after smart wallet calls have finished. cleanup involves refunding the relayer
      // for paying the gass fees for the exec calls. this needs to be improved
-     function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp, address weth) internal override {
-          if (block.chainid != 31337) {
-               address feeToken = allowanceOp.details[1].token;
-               uint256 gasCostInNative = (250000 + execGasUse - gasleft()) * 5 * 10 ** 9;
-               uint256 gasCostInFeeAsset = PriceHelper.quoteGasPriceInFeeAsset(
-                    weth,
-                    feeToken,
-                    PancakeV2Factory,
-                    PancakeV3Factory,
-                    uint128(gasCostInNative)
-               );
+     function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp) internal override {
+          address feeToken = allowanceOp.details[1].token;
+          require(factory.queryFeeAsset(feeToken), "unsuppurted Fee Asset");
 
-               _transfer(owner(), msg.sender, uint160(gasCostInFeeAsset), feeToken);
-          }
+          uint256 gasCostInNative = (35000 + execGasUse - gasleft()) * 5 * 10 ** 9;
+          uint160 gasCostInFeeAsset = uint160(
+               PriceHelper.quoteGasPriceInFeeAsset(
+                    factory.WETH9(),
+                    feeToken,
+                    factory.PancakeV2Factory(),
+                    factory.PancakeV3Factory(),
+                    uint128(gasCostInNative)
+               )
+          );
+          require(ERC20(feeToken).balanceOf(owner()) >= gasCostInFeeAsset, "Inusefficent balance of fee asset");
+
+          // since this function is outside of the Smart wallet the call comes from we need to call this contracts transferFrom
+          // through an encoded call so that msg sender is the contract address and not the sc caller.
+          string memory typeString = "transferFrom(address,address,uint160,address)";
+          bytes memory encodedTransfer = abi.encodeWithSignature(
+               typeString,
+               owner(),
+               msg.sender,
+               gasCostInFeeAsset,
+               feeToken
+          );
+
+          _call(payable(address(this)), 0, encodedTransfer);
+
           AllowanceOpDetails[] memory details = allowanceOp.details;
           // reevoke any leftover allowance to posibility unintended spending
           //from result of infinite approval. this requires loop, but is more convieniant
@@ -158,7 +174,7 @@ contract ECDSAWallet is SmartWallet {
      // extra custom functionality for this contract impl
      function hashUserOps(UserOp[] memory _userOps) internal pure returns (bytes32) {
           bytes32[] memory opHashes = new bytes32[](_userOps.length);
-          for (uint i = 0; i < _userOps.length; i++) {
+          for (uint256 i = 0; i < _userOps.length; i++) {
                opHashes[i] = keccak256(
                     abi.encode(UserOp_TYPE_HASH, _userOps[i].to, _userOps[i].amount, keccak256(_userOps[i].data))
                );

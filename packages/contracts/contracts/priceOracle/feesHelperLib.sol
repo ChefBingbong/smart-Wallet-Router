@@ -60,7 +60,7 @@ library PriceHelper {
           uint256 timeElapsed = block.timestamp - blockTimestampLast;
           priceCumulativeLast +=
                timeElapsed *
-               uint(
+               uint256(
                     UQ112x112.encode(denominationTokenIs0 ? reserve0 : reserve1).uqdiv(
                          denominationTokenIs0 ? reserve1 : reserve0
                     )

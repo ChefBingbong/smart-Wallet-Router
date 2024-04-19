@@ -1,44 +1,20 @@
-import hre from "hardhat";
 import { defaultAbiCoder } from "@ethersproject/abi";
-import type { PopulatedTransaction, Signer } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Address, Hex } from "viem";
+import type { Wallet } from "ethers";
+import type { AllowanceOp, UserOp } from "./types";
 
-export interface UserOp {
-     to: Address;
-     amount: bigint;
-     data: Address;
-}
-
-export interface AllowanceOp {
-     details: {
-          token: Address;
-          amount: bigint;
-          expiration: bigint;
-          nonce: bigint;
-     }[];
-     spender: Address;
-     sigDeadline: bigint;
-}
-
-export interface Transaction {
-     userOps: UserOp[];
-     chainID: number;
-     signature: string;
-}
-
-//Meta Transactions
 export const sign = async (
      userOps: UserOp[],
      allowanceOp: AllowanceOp,
      nonce: bigint,
-     account: SignerWithAddress | Signer,
+     account: SignerWithAddress | Wallet,
+     chainId: number,
      verifyingContract: string,
 ) => {
      const domain = {
           name: "ECDSAWallet",
           version: "0.0.1",
-          chainId: 31337,
+          chainId: chainId,
           verifyingContract,
      };
 
@@ -71,23 +47,12 @@ export const sign = async (
           allowanceOp: allowanceOp,
           userOps: userOps,
           nonce,
-          chainID: 31337,
-          sigChainID: 31337,
+          chainID: chainId,
+          sigChainID: chainId,
      };
-
-     console.log(31337);
 
      const signature = await account._signTypedData(domain, types, values);
-     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [31337, signature]);
-     const txn = {
-          allowanceOp: allowanceOp,
-          userOps,
-          chainID: 31337,
-          signature: sig,
-     };
-     return {
-          values,
-          sig,
-          txn,
-     };
+     const sig = defaultAbiCoder.encode(["uint256", "bytes"], [chainId, signature]);
+
+     return { signature: sig };
 };

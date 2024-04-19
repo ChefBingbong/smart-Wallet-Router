@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IWallet.sol";
 import "./priceOracle/feesHelperLib.sol";
-import "hardhat/console.sol";
+
 
 // this contract is the base implementation of the Smart wallet as serves as
 // a template that can be built upon in inheriting implementation contracts that can
@@ -31,8 +31,9 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
      function owner() public view virtual returns (address);
 
      // really an optional param but required for users who may want
-     // to calculate gasCost for sending fees atomically
-     function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp, address weth) internal virtual;
+     // to calculate gasCost for sending fees atomically or for preforming other cleanup
+     // utilities after an smart wallet call has finished
+     function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp) internal virtual;
 
      // integrators can have flexibility do define their own
      // verify protocol, perhaps args should be dynamic too
@@ -42,12 +43,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           bytes memory _signature
      ) internal virtual;
 
-     function exec(
-          UserOp[] calldata userOps,
-          AllowanceOp calldata allowanceOp,
-          bytes calldata _signature,
-          address weth
-     ) external {
+     function exec(UserOp[] calldata userOps, AllowanceOp calldata allowanceOp, bytes calldata _signature) external {
           uint256 gasStart = gasleft();
           _verify(userOps, allowanceOp, _signature);
           _incrementNonce();
@@ -57,7 +53,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
                _call(payable(userOps[i].to), userOps[i].amount, userOps[i].data);
           }
 
-          _walletExecCallback(gasStart, allowanceOp, weth);
+          _walletExecCallback(gasStart, allowanceOp);
      }
 
      // if user wants to execute themselves we dont need sig or verify
@@ -68,7 +64,7 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
           }
      }
 
-     function _call(address payable _contract, uint256 _value, bytes calldata _data) internal {
+     function _call(address payable _contract, uint256 _value, bytes memory _data) internal {
           (bool ok, bytes memory resp) = _contract.call{value: _value}(_data);
 
           emit LogCall(_contract, _value, _data);

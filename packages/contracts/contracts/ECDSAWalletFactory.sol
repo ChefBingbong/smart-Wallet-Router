@@ -5,11 +5,10 @@ import "./ECDSAWallet.sol";
 import "./SmartWalletFactory.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+
 contract ECDSAWalletFactory is Ownable {
      SmartWalletFactory factory;
      ECDSAWallet wallet;
-
-     using ECDSAUpgradeable for bytes32;
 
      constructor(SmartWalletFactory _factory) {
           wallet = new ECDSAWallet();

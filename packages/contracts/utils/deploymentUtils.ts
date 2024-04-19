@@ -90,8 +90,8 @@ export const Deployments: Deployments = {
      [ChainId.BSC_TESTNET]: {
           //     ECDSAWalletFactory: "0xdEcC697485974455A97D2A7bc7e14d4B49eF7a76",
           //     SmartWalletFactory: "0x8f50F96C46B51c7a891AE876f5e78fB58B8260f0",
-          ECDSAWalletFactory: "0x69b00aBf8f01F1A727f5F05132f16a466c7e50ad",
-          SmartWalletFactory: "0xE9094F85917494647a777156478C788403F9262D",
+          ECDSAWalletFactory: "0x7440E8dE35215c7854ca32BCCf772fDF36f34556",
+          SmartWalletFactory: "0x9b1Fb94a01bA13323b56F1fC8c87ff4378993642",
           Depositor: "0x",
           Permit2: "0x89b5B5d93245f543D53CC55923DF841349a65169",
           NonceHelper: "0x8756307d06955e029be44984D310fD060B1A5A2c",

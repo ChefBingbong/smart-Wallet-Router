@@ -54,12 +54,7 @@ interface IWallet {
 
      function owner() external view returns (address);
 
-     function exec(
-          UserOp[] calldata userOps,
-          AllowanceOp calldata allowanceOp,
-          bytes memory _signature,
-          address weth
-     ) external;
+     function exec(UserOp[] calldata userOps, AllowanceOp calldata allowanceOp, bytes memory _signature) external;
 
      function execFomEoa(UserOp[] calldata userOps) external;
 

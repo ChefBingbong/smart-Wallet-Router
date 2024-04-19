@@ -6,9 +6,29 @@ import "./interfaces/IWalletFactory.sol";
 import "./ECDSAWallet.sol";
 
 contract SmartWalletFactory is IWalletFactory {
+     address public WETH9;
+     address public PancakeV2Factory;
+     address public PancakeV3Factory;
+
+     mapping(address => bool) public supportedFeeAssets;
      mapping(bytes32 => uint256) nonces;
 
      event WalletCreated(address indexed _wallet, bytes32 indexed _callID);
+
+     constructor(
+          address _pancakeV2Factory,
+          address _pancakeV3Factory,
+          address _weth9,
+          address[] memory _initialFeeAssets
+     ) {
+          WETH9 = _weth9;
+          PancakeV2Factory = _pancakeV2Factory;
+          PancakeV3Factory = _pancakeV3Factory;
+
+          for (uint8 i = 0; i < _initialFeeAssets.length; i++) {
+               supportedFeeAssets[_initialFeeAssets[i]] = true;
+          }
+     }
 
      function createWallet(address _impl, bytes memory _call) external payable returns (IWallet) {
           require(msg.value > 0, "user needs to fund wallet on creaton");
@@ -49,5 +69,13 @@ contract SmartWalletFactory is IWalletFactory {
                          )
                     )
                );
+     }
+
+     function queryFeeAsset(address _feeAsset) public view returns (bool) {
+          return supportedFeeAssets[_feeAsset];
+     }
+
+     function addSupportedFeeAsset(address _asset, bool _isSuppoeted) external {
+          supportedFeeAssets[_asset] = _isSuppoeted;
      }
 }

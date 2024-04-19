@@ -1,36 +1,31 @@
-import { ChainId } from "@pancakeswap/sdk";
 import chalk from "chalk";
-import { ethers } from "hardhat";
-// import { Deployments, type ExtendedChainId } from "../src/constants/deploymentUtils";
-// import { sleep } from "../src/utils/sleep";
+import hre from "hardhat";
 import { ECDSAWalletFactory__factory } from "../typechain-types";
-import { Deployments } from "../utils/deploymentUtils";
-// import { PUBLIC_NODES } from "../src/provider/chains";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import type { HttpNetworkConfig } from "hardhat/types";
 
-export type SmartWalletConfig = {
-     chainId: ChainId | ExtendedChainId;
-     smartWalletSigner: string;
-     account: string;
-     relayerFee: number | string;
-};
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function main(config: SmartWalletConfig) {
-     const chainId = config.chainId;
-     //      const smartRouterClient = chain;
-     const provider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.binance.org:8545/");
+async function main() {
+     const { getNamedAccounts, deployments } = hre;
+     const { get } = deployments;
+     const { user } = await getNamedAccounts();
 
-     const deployerPk = config?.smartWalletSigner;
-     const smartWalletSigner = new ethers.Wallet(deployerPk, provider);
+     const provider = new JsonRpcProvider(hre.config.networks[hre.network.name] as HttpNetworkConfig);
+     const signers = hre.network.config.accounts as string[];
 
-     const smartWalletFactory = ECDSAWalletFactory__factory.connect(
-          Deployments[Number(chainId) as ChainId].ECDSAWalletFactory,
-          smartWalletSigner,
-     );
+     console.log(chalk.yellow("Setting up Contracts and Network Config", user));
+     await sleep(3000);
 
-     const userSmartWalletAddress = await smartWalletFactory.walletAddress(config.account, 0);
+     const userWalletSigner = new hre.ethers.Wallet(signers[1], provider);
+     const smartWalletSigner = new hre.ethers.Wallet(signers[0], provider);
 
+     const factory = await get("ECDSAWalletFactory");
+     const smartWalletFactory = ECDSAWalletFactory__factory.connect(factory.address, smartWalletSigner);
+
+     const userSmartWalletAddress = await smartWalletFactory.connect(userWalletSigner).walletAddress(user, BigInt(0));
      const userWalletContractCode = await provider.getCode(userSmartWalletAddress);
+
      if (userWalletContractCode === "0x") {
           console.log(
                // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
@@ -38,7 +33,7 @@ async function main(config: SmartWalletConfig) {
           );
           await sleep(2000);
 
-          const value = Number(config.relayerFee);
+          const value = 1.5 * 10 ** 9;
 
           if (!value) {
                console.log(
@@ -49,29 +44,35 @@ async function main(config: SmartWalletConfig) {
                );
                return;
           }
-          const tx = await smartWalletFactory.populateTransaction.createWallet(config.account, { value });
+          try {
+               const tx = await smartWalletFactory.populateTransaction.createWallet(user, { value });
+               const creationTx = await smartWalletSigner.sendTransaction(tx);
+               const receipt = await creationTx.wait(1);
 
-          const creationTx = await smartWalletSigner.sendTransaction(tx);
-          const receipt = await creationTx.wait(1);
-          console.log(
-               chalk.yellow(
-                    `Successfully deployed user Smart Wallet at tx: ${receipt.transactionHash},
-                       `,
-               ),
-          );
-          return;
+               console.log(
+                    chalk.yellow(
+                         `Successfully deployed user Smart Wallet at tx: ${receipt.transactionHash}\n,
+                   at address ${userSmartWalletAddress} `,
+                    ),
+               );
+               return;
+          } catch (error) {
+               console.log(chalk.red("Transaction failed at the create wallet function execution"), error);
+               throw new Error(parseContractError(error));
+          }
      }
-     console.log(chalk.yellow(`Smart wallet already deployed`));
+     console.log(chalk.yellow("Smart wallet already deployed"));
 }
 
-const customConfig: SmartWalletConfig = {
-     chainId: 97,
-     smartWalletSigner: "22a557c558a2fa235e7d67839b697fc2fb1b53c8705ada632c07dee1eac330a4",
-     account: "0xC39D95F6156B2eCB9977BCc75Ca677a80e06c60D",
-     relayerFee: 1500000000,
-};
+function parseContractError<T>(err: T): string {
+     return (
+          err as {
+               reason: string;
+          }
+     ).reason;
+}
 
-main(customConfig).catch((error) => {
+main().catch((error) => {
      console.error(error);
      process.exitCode = 1;
 });

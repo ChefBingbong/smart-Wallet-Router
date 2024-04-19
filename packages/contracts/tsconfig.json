@@ -10,13 +10,6 @@
 		"outDir": "dist",
 		"composite": true
 	},
-	"include": [
-		"hardhat.config.ts",
-		// "./scripts",
-		"./deploy",
-		"./test",
-		"./src",
-		"typechain/**/*"
-	],
-	// "references": [{ "path": "../../tsconfig.node.json" }]
+	"include": ["./test", "./src", "typechain/**/*"],
+	"files": ["./hardhat.config.ts", "./utils/env.ts"]
 }
