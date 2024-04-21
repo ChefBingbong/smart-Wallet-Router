@@ -36,7 +36,7 @@ const createClients = <TClient extends PublicClient>(chains: Chain[]): Record<Ch
      );
 };
 
-export const publicClients = createClients<PublicClient>(CHAINS);
+export const publicClients: Record<ChainId, PublicClient> = createClients<PublicClient>(CHAINS);
 
 export const getViemClient = ({ chainId }: { chainId: ChainId }) => {
      return publicClients[chainId];
