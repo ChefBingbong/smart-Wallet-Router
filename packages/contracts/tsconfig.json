@@ -1,0 +1,20 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"target": "es5",
+		"module": "commonjs",
+		"strict": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "dist",
+		"composite": true
+	},
+	"include": ["./test", "./src", "typechain/**/*"],
+	"files": [
+		"./hardhat.config.ts",
+		"./utils/env.ts",
+		"./utils/sign.ts",
+		"./utils/types.ts"
+	]
+}

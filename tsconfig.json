@@ -1,20 +1,18 @@
 {
+	"display": "Default",
 	"compilerOptions": {
-		"target": "ES2022",
-		"module": "CommonJS",
-		"strict": true,
+		"composite": false,
+		"declaration": true,
+		"declarationMap": true,
 		"esModuleInterop": true,
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
 		"forceConsistentCasingInFileNames": true,
-		"outDir": "dist"
-	},
-	"include": [
-		"hardhat.config.ts",
-		"./scripts",
-		"./deploy",
-		"./test",
-		"./src",
-		"typechain/**/*"
-	]
+		"inlineSources": false,
+		"isolatedModules": true,
+		"moduleResolution": "node",
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"preserveWatchOutput": true,
+		"skipLibCheck": true,
+		"strict": true
+	}
 }
