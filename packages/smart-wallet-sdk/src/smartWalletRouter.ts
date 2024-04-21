@@ -12,16 +12,10 @@ import type { BaseError } from "abitype";
 import { ethers } from "ethers";
 import { erc20Abi as ERC20ABI, formatTransactionRequest, type Address, type Hex, type PublicClient } from "viem";
 import { bscTestnet } from "viem/chains";
-import {
-     encodeAbiParameters,
-     getContractError,
-     getFunctionSelector,
-     getTransactionError,
-     parseAccount,
-} from "viem/utils";
+import { getContractError, getTransactionError, parseAccount } from "viem/utils";
 import { smartWalletAbi } from "./abis/SmartWalletAbi";
 import { Routers } from "./encoder/buildOperation";
-import { ABI_PARAMETER, OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
+import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
 import { permit2TpedData } from "./permit/permit2TypedData";
 import { getEthersProvider, getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient } from "./provider/walletClient";
@@ -327,8 +321,8 @@ export abstract class SmartWalletRouter {
           const publicClient = getPublicClient({ chainId });
           const factory = getSmartWalletFactory(chainId);
 
-          let address = await factory.read.walletAddress([userAddress, BigInt(0)]);
-          let smartWallet = getSmartWallet(chainId, address);
+          const address = await factory.read.walletAddress([userAddress, BigInt(0)]);
+          const smartWallet = getSmartWallet(chainId, address);
           try {
                const code = await publicClient.getBytecode({ address });
                const nonce = code !== "0x" ? await smartWallet.read.nonce() : BigInt(0);

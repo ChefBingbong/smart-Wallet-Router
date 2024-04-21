@@ -7,7 +7,6 @@ import { OperationType, type WalletOperationBuilder } from "../encoder/walletOpe
 import { getSwapRouterAddress } from "../utils/getSwapRouterAddress";
 import { PancakeSwapUniversalRouter } from "@pancakeswap/universal-router-sdk";
 import type { SmartWalletTradeOptions } from "../types/smartWallet";
-import { signer } from "../provider/walletClient";
 
 export const RouterRecipientByTrade: { [router in Routers]: (chain: ChainId) => Address } = {
      [Routers.UniversalRouter]: (chainId: ChainId) => getUniversalRouterAddress(chainId),

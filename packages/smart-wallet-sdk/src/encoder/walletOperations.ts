@@ -1,13 +1,6 @@
 import type { ChainId } from "@pancakeswap/chains";
 import type { AbiParametersToPrimitiveTypes } from "abitype";
-import {
-     type Address,
-     type Hex,
-     encodeAbiParameters,
-     parseAbiItem,
-     getFunctionSelector as toFunctionSelector,
-     getFunctionSelector,
-} from "viem";
+import { type Address, type Hex, encodeAbiParameters, parseAbiItem, getFunctionSelector } from "viem";
 import type { SwapCall, UserOp } from "../types/smartWallet";
 
 export type ABIType = typeof ABI_PARAMETER;

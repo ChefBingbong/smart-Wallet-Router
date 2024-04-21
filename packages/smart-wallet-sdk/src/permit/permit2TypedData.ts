@@ -1,7 +1,7 @@
 import type { PermitTransferFrom, Witness } from "@pancakeswap/permit2-sdk";
 import { MaxAllowanceTransferAmount, PERMIT_EXPIRATION } from "@pancakeswap/permit2-sdk";
 import type { Address } from "viem";
-import type { AllowanceOp, WalletAllownceDetails } from "../types/smartWallet";
+import type { AllowanceOp } from "../types/smartWallet";
 import _isEqual from "lodash/isEqual";
 
 export const PERMIT_SIG_EXPIRATION = 1800000; // 30 min

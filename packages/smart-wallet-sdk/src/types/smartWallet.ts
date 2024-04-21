@@ -1,11 +1,10 @@
 import type { ChainId } from "@pancakeswap/chains";
-import type { SmartRouterTrade } from "@pancakeswap/smart-router";
-import type { BigintIsh, Currency, CurrencyAmount, TradeType } from "@pancakeswap/swap-sdk-core";
+import type { BigintIsh, Currency } from "@pancakeswap/swap-sdk-core";
+import type { PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
 import type { MethodParameters } from "@pancakeswap/v3-sdk";
 import type { Address, GetContractReturnType, Hex } from "viem";
-import type { RouterTradeType, Routers } from "../encoder/buildOperation";
-import type { PancakeSwapOptions } from "@pancakeswap/universal-router-sdk";
 import type { smartWalletAbi as walletAbi } from "../abis/SmartWalletAbi";
+import type { RouterTradeType, Routers } from "../encoder/buildOperation";
 import type { SmartWalletPermitOptions } from "./permit2";
 
 export interface BaseTradeOptions<TOps> {
