@@ -2,6 +2,7 @@ import {
   JsonRpcProvider,
   type TransactionReceipt,
 } from "@ethersproject/providers";
+import { getV2Subgraphs, getV3Subgraphs } from "@pancakeswap/chains";
 import {
   MaxAllowanceTransferAmount,
   PERMIT_EXPIRATION,
@@ -21,33 +22,26 @@ import {
   SwapRouter,
   type SmartRouterTrade,
 } from "@pancakeswap/smart-router";
-import { getV3Subgraphs, getV2Subgraphs } from "@pancakeswap/chains";
 import chalk from "chalk";
 import type { PopulatedTransaction, ethers } from "ethers";
 import hre from "hardhat";
 import type { HttpNetworkConfig } from "hardhat/types";
 import { formatUnits, hexToBigInt, maxUint256, type Address } from "viem";
-import { arbitrumSepolia, bscTestnet } from "viem/chains";
-import { sign } from "../utils/sign";
 import {
   ECDSAWalletFactory__factory,
   ECDSAWallet__factory,
   ERC20__factory,
 } from "../typechain-types";
 import { Deployments } from "../utils/deploymentUtils";
+import { sign } from "../utils/sign";
+import type { AllowanceOp, UserOp } from "../utils/types";
 import { sleep } from "./deploySmartWallet";
-import {
-  createViemPublicClientGetter,
-  getClient,
-  getViemClient,
-  v2SubgraphClient,
-  v3SubgraphClient,
-} from "./utils/client";
-import type { UserOp, AllowanceOp } from "../utils/types";
+import { getViemClient } from "./utils/client";
 
 async function main(config: ScriptConfig) {
   const chainId = Number(await hre.getChainId()) as ChainId;
   const bridgeChainId = 97;
+  const sigChainId = 97;
 
   const { getNamedAccounts, deployments, network } = hre;
   const { get } = deployments;
@@ -102,15 +96,15 @@ async function main(config: ScriptConfig) {
     chainId,
     CakeContract.address as Address,
     await CakeContract.decimals(),
-    await CakeContract.name(),
-    //     await CakeContract.symbol(),
+    //     await CakeContract.name(),
+    await CakeContract.symbol(),
   );
   const BUSD = new ERC20Token(
     chainId,
     BusdContract.address as Address,
     await BusdContract.decimals(),
-    await BusdContract.name(),
-    //     await BusdContract.symbol(),
+    //     await BusdContract.name(),
+    await BusdContract.symbol(),
   );
 
   const baseAsset = config.baseAsset === CAKE.symbol ? CAKE : BUSD;
@@ -200,10 +194,6 @@ async function main(config: ScriptConfig) {
         permit2Address,
         amountIn.quotient,
         baseAsset.address,
-        {
-          gasLimit: 35000,
-          gasPrice,
-        },
       );
   } catch (error) {
     console.log(chalk.red("Transaction failed at the permit transfer step"));
@@ -218,7 +208,7 @@ async function main(config: ScriptConfig) {
   await sleep(1000);
 
   const quoteProvider = SmartRouter.createQuoteProvider({
-    onChainProvider: () => getViemClient({ chainId }),
+    onChainProvider: () => getViemClient({ chainId }) as never,
   });
 
   let bestTradeRoute: SmartRouterTrade<TradeType>;
@@ -246,7 +236,7 @@ async function main(config: ScriptConfig) {
       BUSD,
       TradeType.EXACT_INPUT,
       {
-        gasPriceWei: (await getViemClient({ chainId }).getGasPrice()) * 5n,
+        gasPriceWei: await getViemClient({ chainId }).getGasPrice(),
 
         maxHops: 2,
         maxSplits: 2,
@@ -300,25 +290,8 @@ async function main(config: ScriptConfig) {
     },
   ] as UserOp[];
 
-  const bridgeOps = [
-    {
-      to: Deployments[Number(chainId) as ChainId].PancakeSwapV3Facotry,
-      amount: BigInt(0),
-      chainId: BigInt(97),
-      data: "0x",
-    },
-    //     {
-    //       to: rawApprovalTx.to,
-    //       amount: BigInt(0),
-    //       data: rawApprovalTx.data,
-    //     },
-    //     {
-    //       to: routerAddress,
-    //       amount: hexToBigInt(rawV3TradeTx.value),
-    //       data: rawV3TradeTx.calldata,
-    //     },
-  ] as UserOp[];
-  console.log(bridgeOps);
+  const bridgeOps = [] as UserOp[];
+  console.log(bridgeOps, userSmartWalletAddress);
 
   const currentWalletTxNonce = await userSmartWallet?.nonce();
   const smartWalletSignature = await sign(
@@ -327,6 +300,7 @@ async function main(config: ScriptConfig) {
     permitDetails,
     currentWalletTxNonce.toBigInt(),
     userWalletSigner,
+    Number(sigChainId),
     Number(chainId),
     Number(bridgeChainId),
     userSmartWalletAddress,
@@ -337,24 +311,15 @@ async function main(config: ScriptConfig) {
     const smartWallTxGas = await userSmartWallet
       .connect(smartWalletSigner)
       .estimateGas.exec(
-        smartWalletOperations,
-        bridgeOps,
-        permitDetails,
+        smartWalletSignature.values,
         smartWalletSignature.signature,
-        chainId,
-        Number(bridgeChainId),
       );
 
     const rawSmartWalletTx = await userSmartWallet
       .connect(smartWalletSigner)
       .populateTransaction.exec(
-        smartWalletOperations,
-        bridgeOps,
-
-        permitDetails,
+        smartWalletSignature.values,
         smartWalletSignature.signature,
-        chainId,
-        Number(bridgeChainId),
         {
           gasLimit: smartWallTxGas,
           gasPrice,

@@ -1,10 +1,12 @@
+import type { ChainId } from "@pancakeswap/chains";
 import type { AbiParametersToPrimitiveTypes } from "abitype";
 import {
+     type Address,
+     type Hex,
      encodeAbiParameters,
      parseAbiItem,
      getFunctionSelector as toFunctionSelector,
-     type Address,
-     type Hex,
+     getFunctionSelector,
 } from "viem";
 import type { SwapCall, UserOp } from "../types/smartWallet";
 
@@ -19,6 +21,7 @@ export enum OperationType {
      CREATE_WALLET = "CREATE_WALLET",
      TRANSFER = "TRANSFER",
      TRANSFER_FROM = "TRANSFER_FROM",
+     WALLET_TRANSFER_FROM = "WALLET_TRANSFER_FROM",
      APPROVE = "APPROVE",
 
      PERMIT2_PERMIT = "PERMIT2_PERMIT",
@@ -29,53 +32,17 @@ export enum OperationType {
      CLAIM_PERMIT = "CLAIM_PERMIT",
 }
 
-const ABI_STRUCT_PERMIT_DETAILS = `
-struct PermitDetails {
-  address token;
-  uint160 amount;
-  uint48 expiration;
-  uint48 nonce;
-}`.replaceAll("\n", "");
-
-const ABI_STRUCT_PERMIT_SINGLE = `
-struct PermitSingle {
-  PermitDetails details;
-  address spender;
-  uint256 sigDeadline;
-}
-`.replaceAll("\n", "");
-
-const ABI_STRUCT_PERMIT_BATCH = `
-struct PermitBatch {
-  PermitSingle[] details;
-  address spender;
-  uint256 sigDeadline;
-}
-`.replaceAll("\n", "");
-
-const ABI_STRUCT_ALLOWANCE_TRANSFER_DETAILS = `
-struct AllowanceTransferDetails {
-  address from;
-  address to;
-  uint160 amount;
-  address token;
-}
-`.replaceAll("\n", "");
-
-const ABI_STRUCT_SIGNATURE_TRANSFER_DETAILS = `
-struct ISignatureTransfer.PermitTransferFrom {
-  TokenPermissions permitted;
-  uint256 nonce;
-  uint256 deadline;
-}
-
-`.replaceAll("\n", "");
-
 export const ABI_PARAMETER = {
      // samrt wallet ops
+     [OperationType.WALLET_TRANSFER_FROM]: parseAbiItem(
+          "function transferFrom(address from, address to, uint160 amount, address token)",
+     ),
      [OperationType.CREATE_WALLET]: parseAbiItem("function createWallet(address _owner)"),
      [OperationType.EXEC]: parseAbiItem([
-          "function exec(UserOp[] calldata userOps, bytes calldata _signature, address _feeTokenAddress, uint256 _gasPrice)",
+          "function exec(ECDSAExec memory _walletExec, bytes calldata _signature)",
+          "struct AllowanceOp { AllowanceOpDetails[] details; address spender; uint256 sigDeadline; }",
+          "struct AllowanceOpDetails { address token; uint160 amount; uint48 expiration; uint48 nonce; }",
+          "struct ECDSAExec { AllowanceOp allowanceOp; UserOp[] userOps; UserOp[] bridgeOps; address wallet; uint256 nonce; uint256 chainID; uint256 bridgeChainID; uint256 sigChainID; }",
           "struct UserOp { address to; uint256 amount; bytes data; }",
      ]),
 
@@ -83,46 +50,18 @@ export const ABI_PARAMETER = {
      [OperationType.TRANSFER]: parseAbiItem("function transfer(address to, uint256 amount)"),
      [OperationType.TRANSFER_FROM]: parseAbiItem("function transferFrom(address from, address to, uint256 amount)"),
      [OperationType.APPROVE]: parseAbiItem("function approve(address spender, uint256 amount)"),
-
-     // PERMIT OPS
-     [OperationType.PERMIT2_PERMIT]: parseAbiItem([
-          "function permit2Permit(PermitSingle permitSingle, bytes data)",
-          ABI_STRUCT_PERMIT_SINGLE,
-          ABI_STRUCT_PERMIT_DETAILS,
-     ]),
-     [OperationType.PERMIT2_PERMIT_BATCH]: parseAbiItem([
-          "function permit2PermitBatch(PermitBatch permitBatch, bytes data)",
-          ABI_STRUCT_PERMIT_BATCH,
-          ABI_STRUCT_PERMIT_SINGLE,
-          ABI_STRUCT_PERMIT_DETAILS,
-     ]),
-     [OperationType.PERMIT2_TRANSFER_FROM]: parseAbiItem(
-          "function permit2TransferFrom(address token, address recipient, uint160 amount)",
-     ),
-     [OperationType.PERMIT2_TRANSFER_FROM_BATCH]: parseAbiItem([
-          "function permit2PermitTransferFromBatch(AllowanceTransferDetails[] batchDetails)",
-          ABI_STRUCT_ALLOWANCE_TRANSFER_DETAILS,
-     ]),
-
-     // SW PERMIT OPS
-     [OperationType.PERMIT2_TRANSFER_TO_RELAYER_WITNESS]: parseAbiItem([
-          "function deposit(uint256 _amount, address _token, address _user, address _permit2A, PermitBatch calldata _permit, bytes calldata _signature)",
-          "struct PermitBatch { PermitDetails[] details; address spender; uint256 sigDeadline; }",
-          "struct PermitDetails { address token; uint160 amount; uint48 expiration; uint48 nonce; }",
-     ]),
-     [OperationType.CLAIM_PERMIT]: parseAbiItem(
-          "function withdrawERC20(address _token, uint256 _amount, address recipient)",
-     ),
 };
 
 export class WalletOperationBuilder {
      userOps: UserOp[];
-
-     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+     bridgeOps: UserOp[];
+     chainId: ChainId;
      externalUserOps: any[];
 
-     constructor() {
+     constructor(chainId: ChainId) {
+          this.chainId = chainId;
           this.userOps = [];
+          this.bridgeOps = [];
           this.externalUserOps = [];
      }
 
@@ -134,7 +73,7 @@ export class WalletOperationBuilder {
      ): void {
           const { encodedSelector, encodedInput } = encodeOperation(type, parameters);
           const operationCalldata = encodedSelector.concat(encodedInput.substring(2)) as Hex;
-          const userOperation = { to: contract, amount: value, data: operationCalldata };
+          const userOperation = { to: contract, amount: value, chainId: this.chainId, data: operationCalldata };
           this.userOps.push(userOperation);
      }
 
@@ -151,13 +90,24 @@ export class WalletOperationBuilder {
      }
 
      addUserOperationFromCall = (calls: SwapCall[]): void => {
-          // biome-ignore lint/complexity/noForEach: <explanation>
           calls.forEach((call: SwapCall) => {
                const { address, value, calldata } = call;
-               const userOperation = { to: address, amount: BigInt(value), data: calldata };
+               const userOperation = { to: address, amount: BigInt(value), chainId: this.chainId, data: calldata };
                this.userOps.push(userOperation);
           });
      };
+
+     addBridgeOperation<TOperationType extends OperationUsed>(
+          type: TOperationType,
+          parameters: ABIParametersType<TOperationType>,
+          contract: Address,
+          value = 0n,
+     ): void {
+          const { encodedSelector, encodedInput } = encodeOperation(type, parameters);
+          const operationCalldata = encodedSelector.concat(encodedInput.substring(2)) as Hex;
+          const bridgeOperation = { to: contract, amount: value, chainId: this.chainId, data: operationCalldata };
+          this.bridgeOps.push(bridgeOperation);
+     }
 }
 
 export type WalletOperation = {
@@ -170,7 +120,8 @@ export function encodeOperation<TOperationType extends OperationUsed>(
      parameters: ABIParametersType<TOperationType>,
 ): WalletOperation {
      const operationAbiItem = ABI_PARAMETER[type];
-     const encodedSelector = toFunctionSelector(operationAbiItem);
+     const encodedSelector = getFunctionSelector(operationAbiItem);
      const encodedInput = encodeAbiParameters(operationAbiItem.inputs, parameters as never);
+
      return { encodedSelector, encodedInput };
 }

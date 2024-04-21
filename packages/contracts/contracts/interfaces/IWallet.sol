@@ -10,6 +10,19 @@ interface IWallet {
 
   event Permit(address indexed owner, address indexed token, address indexed spender, uint160 amount, uint48 expiration, uint48 nonce);
 
+  event WalletOpRecoveryResult(address indexed signer, bytes32 dataHash, bytes signature, address wallet, uint256 nonce);
+
+  struct ECDSAExec {
+    AllowanceOp allowanceOp;
+    UserOp[] userOps;
+    UserOp[] bridgeOps;
+    address wallet;
+    uint256 nonce;
+    uint256 chainID;
+    uint256 bridgeChainID;
+    uint256 sigChainID;
+  }
+
   struct UserOp {
     address to;
     uint256 amount;
@@ -36,20 +49,21 @@ interface IWallet {
     uint48 nonce;
   }
 
+  struct ECDSAExecValidationDetails {
+    address signer;
+    bytes32 dataHash;
+    bytes signature;
+    address wallet;
+    uint256 nonce;
+  }
+
   receive() external payable;
 
   function nonce() external view returns (uint256);
 
   function owner() external view returns (address);
 
-  function exec(
-    UserOp[] calldata userOps,
-    UserOp[] calldata bridgeOps,
-    AllowanceOp calldata allowanceOp,
-    bytes memory _signature,
-    uint256 chainId,
-    uint256 bridgeChainId
-  ) external;
+  function exec(ECDSAExec memory _walletExec, bytes memory _signature) external;
 
   function execFomEoa(UserOp[] calldata userOps) external;
 

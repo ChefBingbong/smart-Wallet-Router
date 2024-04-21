@@ -1,8 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.6;
+
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IWallet.sol";
-import "./libraries/feesHelperLib.sol";
+import "./libraries/FeeHelperLib.sol";
 
 // this contract is the base implementation of the Smart wallet as serves as
 // a template that can be built upon in inheriting implementation contracts that can
@@ -23,49 +24,33 @@ abstract contract SmartWallet is UUPSUpgradeable, IWallet {
   }
 
   // virtual functions that are rquired to be implemented
+  function _walletExecCallback(uint256 execGasUse, ECDSAExec memory walletExec, bytes memory _sig) internal virtual;
+
+  function _verify(ECDSAExec memory _walletExec, bytes memory _signature) internal virtual;
+
   function _incrementNonce() internal virtual;
 
   function nonce() public view virtual returns (uint256);
 
   function owner() public view virtual returns (address);
 
-  // really an optional param but required for users who may want
-  // to calculate gasCost for sending fees atomically or for preforming other cleanup
-  // utilities after an smart wallet call has finished
-  function _walletExecCallback(uint256 execGasUse, AllowanceOp memory allowanceOp) internal virtual;
-
-  // integrators can have flexibility do define their own
-  // verify protocol, perhaps args should be dynamic too
-  function _verify(
-    UserOp[] memory userOps,
-    UserOp[] memory bridgeOps,
-    AllowanceOp memory allowanceOp,
-    bytes memory _signature,
-    uint256 chainId,
-    uint256 bridgeChainId
-  ) internal virtual;
-
-  function exec(
-    UserOp[] calldata userOps,
-    UserOp[] calldata bridgeOps,
-    AllowanceOp calldata allowanceOp,
-    bytes calldata _signature,
-    uint256 chainId,
-    uint256 bridgeChainId
-  ) external {
+  function exec(ECDSAExec memory _walletExec, bytes memory _signature) external {
     uint256 gasStart = gasleft();
-    _verify(userOps, bridgeOps, allowanceOp, _signature, chainId, bridgeChainId);
+    _verify(_walletExec, _signature);
     _incrementNonce();
 
-    UserOp[] memory ops = userOps;
-    if (block.chainid == bridgeChainId && chainId != bridgeChainId) ops = bridgeOps;
+    uint256 _chainID = _walletExec.chainID;
+    uint256 _bridgeChainID = _walletExec.bridgeChainID;
+
+    UserOp[] memory ops = _walletExec.userOps;
+    if (block.chainid == _bridgeChainID && _chainID != _bridgeChainID) ops = _walletExec.bridgeOps;
 
     for (uint32 i = 0; i < ops.length; i++) {
-      require(address(this).balance >= userOps[i].amount, "SmartWallet: insufficient base asset balance");
+      require(address(this).balance >= _walletExec.userOps[i].amount, "SmartWallet: insufficient base asset balance");
       _call(payable(ops[i].to), ops[i].amount, ops[i].data);
     }
 
-    _walletExecCallback(gasStart, allowanceOp);
+    _walletExecCallback(gasStart, _walletExec, _signature);
   }
 
   // if user wants to execute themselves we dont need sig or verify

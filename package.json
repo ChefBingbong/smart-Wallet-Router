@@ -12,12 +12,20 @@
     "run:script": "pnpm --filter @smart-wallet/contracts run script",
     "sdk": "pnpm --filter @smart-wallet/smart-router-sdk",
     "dev": "pnpm --recursive --parallel --stream run dev",
-    "build:packages": "pnpm --filter @smart-wallet/smart-router-sdk run build"
+    "build": "pnpm run build",
+    "build:packages": "pnpm --filter @smart-wallet/smart-router-sdk run build",
+    "build:example": "pnpm --filter example run build",
+    "preinstall": "npx only-allow pnpm",
+    "start": "pnpm --recursive --parallel --stream run start",
+    "lint": "biome check .",
+    "lint:fix": "bun lint --apply",
+    "format": "biome format . --write"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@biomejs/biome": "^1.7.0",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
     "eslint": "^8.57.0",
@@ -25,6 +33,22 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "prettier": "^3.2.5",
-    "typescript": "5.2.2"
+    "stylelint": "^16.3.1",
+    "stylelint-config-prettier": "^9.0.5",
+    "stylelint-config-recommended": "^14.0.0",
+    "stylelint-config-standard": "^36.0.0",
+    "stylelint-config-styled-components": "^0.1.1",
+    "typescript": "5.2.2",
+    "vitest": "^1.5.0"
+  },
+  "lint-staged": {
+    "!(package).json": [],
+    "*{.js,.jsx,.ts,.tsx}": [
+      "biome format",
+      "biome check"
+    ]
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

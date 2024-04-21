@@ -1,18 +1,7 @@
-import type {
-     PermitBatch,
-     PermitBatchData,
-     PermitTransferFrom,
-     PermitTransferFromData,
-     Witness,
-} from "@pancakeswap/permit2-sdk";
-import {
-     AllowanceTransfer,
-     MaxAllowanceTransferAmount,
-     PERMIT_EXPIRATION,
-     SignatureTransfer,
-} from "@pancakeswap/permit2-sdk";
-import type { ChainId } from "@pancakeswap/sdk";
+import type { PermitTransferFrom, Witness } from "@pancakeswap/permit2-sdk";
+import { MaxAllowanceTransferAmount, PERMIT_EXPIRATION } from "@pancakeswap/permit2-sdk";
 import type { Address } from "viem";
+import type { AllowanceOp } from "../types/smartWallet";
 
 export const PERMIT_SIG_EXPIRATION = 1800000; // 30 min
 
@@ -51,49 +40,29 @@ export const generatePermitTransferFromTypedData = (
      return { permit, witness };
 };
 
-export const permit2TpedData = (chainId: ChainId, token: Address, spender: Address, nonce: bigint): PermitBatchData => {
-     if (!chainId) throw new Error("PERMIT: missing chainId");
+export const permit2TpedData = (token: Address, spender: Address, nonce: bigint): { permitData: AllowanceOp } => {
      if (!token) throw new Error("PERMIT: missing token");
      if (!spender) throw new Error("PERMIT: missing spender");
      if (!token) throw new Error("PERMIT: missing token");
 
-     // if (nonce === undefined) throw new Error("PERMIT: missing nonce");
-
-     // const permit = generatePermitTransferFromTypedData(token, amount, spender, witness, nonce as bigint);
-     // const {
-     //      domain,
-     //      types,
-     //      values: message,
-     // } = SignatureTransfer.getPermitData(
-     //      permit.permit,
-     //      "0x89b5B5d93245f543D53CC55923DF841349a65169",
-     //      chainId,
-     //      permit.witness,
-     // );
-     const permit: PermitBatch = {
+     const allowanceOps = {
           details: [
                {
-                    token,
+                    token: token,
                     amount: MaxAllowanceTransferAmount,
-                    expiration: toDeadline(PERMIT_EXPIRATION).toString(),
+                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
                     nonce,
+               },
+               {
+                    token: token,
+                    amount: MaxAllowanceTransferAmount,
+                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
+                    nonce: nonce + 1n,
                },
           ],
           spender,
-          sigDeadline: toDeadline(PERMIT_SIG_EXPIRATION).toString(),
-     };
+          sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
+     } as AllowanceOp;
 
-     const { domain, types, values } = AllowanceTransfer.getPermitData(
-          permit,
-          "0x89b5B5d93245f543D53CC55923DF841349a65169",
-          97,
-     );
-
-     return {
-          // ...permit,
-          domain,
-          types,
-          primaryType: "PermitBatch",
-          values,
-     };
+     return { permitData: allowanceOps };
 };

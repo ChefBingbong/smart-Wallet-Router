@@ -1,6 +1,6 @@
 import type { ChainId } from "@pancakeswap/chains";
 import type { SmartRouterTrade } from "@pancakeswap/smart-router";
-import type { Currency, CurrencyAmount, TradeType } from "@pancakeswap/swap-sdk-core";
+import type { BigintIsh, Currency, CurrencyAmount, TradeType } from "@pancakeswap/swap-sdk-core";
 import type { MethodParameters } from "@pancakeswap/v3-sdk";
 import type { Address, GetContractReturnType, Hex } from "viem";
 import type { RouterTradeType, Routers } from "../encoder/buildOperation";
@@ -22,10 +22,7 @@ export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
 export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOptions> {
      hasApprovedPermit2: boolean;
      hasApprovedRelayer: boolean;
-     fees?: {
-          feeTokenAddress: Address;
-          feeAmount: CurrencyAmount<Currency>;
-     };
+     allowance: { allowance: bigint; needsApprval: boolean; permitNonce: bigint };
      isUsingPermit2: boolean;
      walletPermitOptions?: SmartWalletPermitOptions;
      smartWalletDetails: { address: Address; nonce: bigint };
@@ -36,8 +33,20 @@ export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOpt
 export type UserOp = {
      readonly to: Address;
      readonly amount: bigint;
+     readonly chainId: ChainId | number;
      readonly data: Hex;
 };
+
+export interface AllowanceOp {
+     readonly details: {
+          readonly token: Address;
+          readonly amount: BigintIsh;
+          readonly expiration: BigintIsh;
+          readonly nonce: BigintIsh;
+     }[];
+     readonly spender: Address;
+     readonly sigDeadline: BigintIsh;
+}
 
 export type SwapCall = MethodParameters & { address: Address };
 
@@ -58,7 +67,8 @@ export type FeeResponse = {
 
 export type SmartWalletGasParams = {
      feeAsset: string;
-     trade: SmartRouterTrade<TradeType>;
+     inputCurrency: Currency;
+     outputCurrency: Currency;
      chainId: ChainId;
 };
 export type SmartWalletDetails = { address: Address; nonce: bigint; wallet: GetContractReturnType<typeof walletAbi> };

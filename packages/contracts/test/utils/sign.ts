@@ -1,6 +1,6 @@
 import { defaultAbiCoder } from "@ethersproject/abi";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { Signer, Wallet } from "ethers";
+import { Signer, Wallet } from "ethers";
 
 import type { Address } from "viem";
 
@@ -24,13 +24,12 @@ export interface AllowanceOp {
 export const sign = async (
   userOps: UserOp[],
   bridgeOps: UserOp[],
-
   allowanceOp: AllowanceOp,
   nonce: bigint,
-  account: SignerWithAddress | Signer,
+  account: SignerWithAddress,
+  sigChainId: number,
   chainId: number,
   bridgeChainID: number,
-
   verifyingContract: string,
 ) => {
   const domain = {
@@ -62,6 +61,7 @@ export const sign = async (
       { name: "allowanceOp", type: "AllowanceOp" },
       { name: "userOps", type: "UserOp[]" },
       { name: "bridgeOps", type: "UserOp[]" },
+      { name: "wallet", type: "address" },
       { name: "nonce", type: "uint256" },
       { name: "chainID", type: "uint256" },
       { name: "bridgeChainID", type: "uint256" },
@@ -72,17 +72,18 @@ export const sign = async (
     allowanceOp: allowanceOp,
     userOps: userOps,
     bridgeOps,
+    wallet: verifyingContract,
     nonce,
     chainID: chainId,
     bridgeChainID: bridgeChainID,
-    sigChainID: chainId,
+    sigChainID: sigChainId,
   };
 
   const signature = await account._signTypedData(domain, types, values);
   const sig = defaultAbiCoder.encode(
     ["uint256", "bytes"],
-    [chainId, signature],
+    [sigChainId, signature],
   );
 
-  return { signature: sig };
+  return { signature: sig, values };
 };

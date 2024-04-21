@@ -2,25 +2,24 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import type { DeployFunction } from "hardhat-deploy/types";
 import { Deployments } from "../utils/deploymentUtils";
 import type { ChainId } from "@pancakeswap/sdk";
-import { shouldVerifyContract } from "../utils/deploy";
-import { verify } from "../scripts/verifyContract";
+// import { shouldVerifyContract } from "../utils/deploy";
+// import { verify } from "../scripts/verifyContract";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = hre.deployments;
   const { deployer } = await hre.getNamedAccounts();
-  const chainId = await hre.getChainId();
+  const chainId = Number(await hre.getChainId()) as ChainId;
 
   console.log("Deployer Address", deployer);
 
-  const WETH9 = Deployments[Number(chainId) as ChainId].WETH9;
-  const pancakeSwapV2Facotry =
-    Deployments[Number(chainId) as ChainId].PancakeSwapV2Facotry;
-  const pancakeSwapV3Facotry =
-    Deployments[Number(chainId) as ChainId].PancakeSwapV3Facotry;
+  const WETH9 = Deployments[chainId].WETH9;
+  const pancakeSwapV2Facotry = Deployments[chainId].PancakeSwapV2Facotry;
+  const pancakeSwapV3Facotry = Deployments[chainId].PancakeSwapV3Facotry;
+
   const feeAssets = [
-    Deployments[Number(chainId) as ChainId].Cake,
-    Deployments[Number(chainId) as ChainId].Busd,
-    Deployments[Number(chainId) as ChainId].WETH9,
+    Deployments[chainId].Cake,
+    Deployments[chainId].Busd,
+    Deployments[chainId].WETH9,
   ];
 
   const res = await deploy("SmartWalletFactory", {

@@ -11,5 +11,10 @@
 		"composite": true
 	},
 	"include": ["./test", "./src", "typechain/**/*"],
-	"files": ["./hardhat.config.ts", "./utils/env.ts", "./utils/sign.ts"]
+	"files": [
+		"./hardhat.config.ts",
+		"./utils/env.ts",
+		"./utils/sign.ts",
+		"./utils/types.ts"
+	]
 }

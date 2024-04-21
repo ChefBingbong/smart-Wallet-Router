@@ -1,6 +1,7 @@
 import { ChainId } from "@pancakeswap/chains";
 import { createPublicClient, fallback, http, type Chain, type PublicClient } from "viem";
 import { CHAINS, PUBLIC_NODES } from "./chains";
+import { JsonRpcProvider } from "@ethersproject/providers";
 
 export type CreatePublicClientParams = {
      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -98,4 +99,8 @@ export const publicClients = createClients<PublicClient>(CHAINS);
 
 export const getViemClient = ({ chainId }: { chainId: ChainId }) => {
      return publicClients[chainId];
+};
+
+export const getEthersProvider = (chainId: ChainId) => {
+     return new JsonRpcProvider(PUBLIC_NODES[chainId][0]);
 };

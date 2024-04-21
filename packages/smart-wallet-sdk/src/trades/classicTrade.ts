@@ -8,7 +8,6 @@ import { getSwapRouterAddress } from "../utils/getSwapRouterAddress";
 import { PancakeSwapUniversalRouter } from "@pancakeswap/universal-router-sdk";
 import type { SmartWalletTradeOptions } from "../types/smartWallet";
 import { signer } from "../provider/walletClient";
-import { Deployments } from "../constants/deploymentUtils";
 
 export const RouterRecipientByTrade: { [router in Routers]: (chain: ChainId) => Address } = {
      [Routers.UniversalRouter]: (chainId: ChainId) => getUniversalRouterAddress(chainId),
@@ -44,27 +43,30 @@ export class ClasicTrade implements Command {
 
           const universalRouterAddress = getUniversalRouterAddress(chainId);
           const smartRouterAddress = getSwapRouterAddress(chainId);
-          const permit2Address = Deployments[chainId].Permit2;
+          const permit2Address = smartWalletDetails.address;
 
           if (!options.hasApprovedPermit2 && this.tradeType === RouterTradeType.SmartWalletTradeWithPermit2) {
                planner.addExternalUserOperation(OperationType.APPROVE, [permit2Address, maxUint256], inputToken);
           }
           if (this.tradeType === RouterTradeType.SmartWalletTrade) {
-               const feeAmount = options.fees?.feeAmount?.quotient as bigint;
-               const amountWithFees = (amountIn + feeAmount) as bigint;
-
                if (!options.hasApprovedRelayer) {
                     planner.addExternalUserOperation(
                          OperationType.APPROVE,
-                         [smartWalletDetails.address, amountWithFees],
+                         [smartWalletDetails.address, amountIn],
                          inputToken,
                     );
                }
-               planner.addUserOperation(OperationType.TRANSFER_FROM, [account, signer.address, feeAmount], inputToken);
                planner.addUserOperation(
                     OperationType.TRANSFER_FROM,
                     [account, smartWalletDetails.address, amountIn],
                     inputToken,
+               );
+          }
+          if (this.tradeType === RouterTradeType.SmartWalletTradeWithPermit2) {
+               planner.addUserOperation(
+                    OperationType.WALLET_TRANSFER_FROM,
+                    [account, smartWalletDetails.address, amountIn, inputToken],
+                    smartWalletDetails.address,
                );
           }
           if (routerRecipient === smartRouterAddress) {

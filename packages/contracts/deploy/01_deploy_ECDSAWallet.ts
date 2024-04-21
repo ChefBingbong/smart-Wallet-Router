@@ -1,7 +1,7 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import type { DeployFunction } from "hardhat-deploy/types";
-import { shouldVerifyContract } from "../utils/deploy";
-import { verify } from "../scripts/utils/verify";
+// import { shouldVerifyContract } from "../utils/deploy";
+// import { verify } from "../scripts/utils/verify";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy, get } = hre.deployments;
@@ -16,7 +16,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: [smartWallet.address],
     log: true,
     skipIfAlreadyDeployed: false,
-    deterministicDeployment: "0x000022",
+    deterministicDeployment: "0x000023",
   });
 
   console.log("ECDSAWalletFactory Address", res.address);

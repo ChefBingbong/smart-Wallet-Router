@@ -6,7 +6,6 @@ import { LoadingSpinner } from "@saas-ui/react";
 import {
   RouterTradeType,
   SmartWalletRouter,
-  getNonceHelperContract,
 } from "@smart-wallet/smart-router-sdk";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
@@ -18,7 +17,6 @@ import {
   useState,
 } from "react";
 import {
-  type Address,
   TransactionRejectedRpcError,
   UserRejectedRequestError,
   type TransactionReceipt,
@@ -40,7 +38,6 @@ import { useTheme } from "~/hooks/useTheme";
 import { assets, assetsBaseConfig, type Asset } from "~/lib/assets";
 import { wagmiconfig as config } from "~/pages/_app";
 import { getSmartWalletOptions } from "~/utils/getSmartWalletOptions";
-import { getWalletPermit2Address as getPermit2Address } from "~/utils/getWalletPermit2Address";
 
 export enum ConfirmModalState {
   REVIEWING = -1,
@@ -71,7 +68,7 @@ const IndexPage = () => {
   const [inputValue, setInputValue] = useState("");
   const [asset, setAsset] = useState<Currency>(assetsBaseConfig.CAKE);
   const [toAsset, setToAsset] = useState<Currency>(assetsBaseConfig.BUSD);
-  const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.BUSD);
+  const [feeAsset, setFeeAsset] = useState<Currency>(assetsBaseConfig.CAKE);
 
   const { transactionStatusDisplay, primaryColor, secondaryColor } = useTheme(
     txState,
@@ -119,6 +116,29 @@ const IndexPage = () => {
     refetchOnWindowFocus: false,
     enabled: Boolean(address && chainId),
   });
+
+  const { data: allowance } = useQuery({
+    queryKey: ["allowance-query", chainId, asset.symbol, address, chainId],
+    queryFn: async () => {
+      if (!asset || !chainId || !address || !smartWalletDetails || !amount)
+        return undefined;
+
+      return  SmartWalletRouter.getContractAllowance(
+        asset.wrapped.address,
+        address,
+        smartWalletDetails?.address,
+        chainId,
+        amount.quotient,
+      )
+    },
+
+    refetchInterval: 20000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: Boolean(
+      address && asset && chainId && smartWalletDetails && amount,
+    ),
+  });
   const deferQuotientRaw = useDeferredValue(amount.quotient.toString());
   const deferQuotient = useDebounce(deferQuotientRaw, 500);
   const {
@@ -133,47 +153,15 @@ const IndexPage = () => {
     amount: amount,
   });
 
-  const { data: allowance } = useQuery({
-    queryKey: ["allowance-query", chainId, asset.symbol, address, chainId],
-    queryFn: async () => {
-      if (!asset || !chainId || !address || !smartWalletDetails || !amount)
-        return undefined;
-
-      const [permit2Allowances, smartWalletAllowances] = await Promise.all([
-        SmartWalletRouter.getContractAllowance(
-          asset.wrapped.address,
-          address,
-          getPermit2Address(chainId),
-          chainId,
-          amount.quotient,
-        ),
-        SmartWalletRouter.getContractAllowance(
-          asset.wrapped.address,
-          address,
-          smartWalletDetails?.address,
-          chainId,
-          amount.quotient,
-        ),
-      ]);
-      return { permit2Allowances, smartWalletAllowances };
-    },
-
-    refetchInterval: 20000,
-    retry: false,
-    refetchOnWindowFocus: false,
-    enabled: Boolean(
-      address && asset && chainId && smartWalletDetails && amount,
-    ),
-  });
-
   const { data: fees } = useQuery({
-    queryKey: ["fees-query", chainId, deferQuotient, feeAsset.symbol],
+    queryKey: ["fees-query", chainId, asset.symbol, toAsset.symbol, feeAsset.symbol],
     queryFn: async () => {
-      if (!chainId || !trade || !deferQuotient || !feeAsset) return undefined;
+      if (!chainId || !deferQuotient || !feeAsset) return undefined;
 
       return SmartWalletRouter.estimateSmartWalletFees({
         feeAsset: feeAsset.symbol,
-        trade,
+        inputCurrency: asset,
+        outputCurrency: toAsset,
         chainId,
       });
     },
@@ -181,7 +169,7 @@ const IndexPage = () => {
     refetchInterval: 10000,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: Boolean(deferQuotient && trade && chainId && feeAsset),
+    enabled: Boolean(asset && toAsset && trade && chainId && feeAsset),
   });
 
   const swapCallParams = useMemo(() => {
@@ -190,7 +178,6 @@ const IndexPage = () => {
       !chainId ||
       !allowance ||
       !smartWalletDetails ||
-      !fees ||
       !address
     )
       return undefined;
@@ -201,10 +188,7 @@ const IndexPage = () => {
       allowance,
       smartWalletDetails as never,
       chainId,
-      {
-        feeTokenAddress: feeAsset.wrapped.address,
-        feeAmount: fees.gasCost,
-      } as never,
+      undefined
     );
     return SmartWalletRouter.buildSmartWalletTrade(trade, options);
   }, [trade, address, chainId, allowance, smartWalletDetails, fees, feeAsset]);
@@ -229,95 +213,65 @@ const IndexPage = () => {
       }
     }
     setTXState(ConfirmModalState.PERMITTING);
-    const permit2NonceContract = getNonceHelperContract(chainId);
-    const nextNonce = await permit2NonceContract.read.nextNonce([address]);
+    const { domain, types, values } = swapCallParams.smartWalletTypedData;
 
-    const { permit2MetaData } = swapCallParams;
-    const permitTypedData = await permit2MetaData(nextNonce ?? 0);
     await signTypedDataAsync({
       account: address,
-      domain: permitTypedData.domain,
-      types: permitTypedData.types,
-      message: permitTypedData.values,
-      primaryType: "PermitBatch",
+      domain,
+      types,
+      message: values,
+      primaryType: "ECDSAExec",
     })
-      .then(async (permittSig) => {
-        setTXState(ConfirmModalState.PENDING_CONFIRMATION);
-        const { domain, types, values } = swapCallParams.smartWalletDetails;
-        const { userOps: permiUserOps } = SmartWalletRouter.appendPermit2UserOp(
-          permittSig,
-          address,
-          permitTypedData,
+      .then(async (signature) => {
+        setTXState(ConfirmModalState.SIGNED);
+        const signatureEncoded = defaultAbiCoder.encode(
+          ["uint256", "bytes"],
+          [chainId, signature],
         );
-        const updatedOps = [...permiUserOps, ...values.userOps];
 
-        await signTypedDataAsync({
-          account: address,
-          domain,
-          types,
-          message: {
-            ...values,
-            userOps: updatedOps,
-          },
-          primaryType: "ECDSAExec",
-        })
-          .then(async (signature) => {
-            setTXState(ConfirmModalState.SIGNED);
-            const signatureEncoded = defaultAbiCoder.encode(
-              ["uint256", "bytes"],
-              [chainId, signature],
-            );
+        const tradeEncoded = await SmartWalletRouter.encodeSmartRouterTrade(
+          [values, signatureEncoded],
+          smartWalletDetails?.address!,
+          chainId
+        );
+        console.log(tradeEncoded, values)
 
-            const tradeEncoded = SmartWalletRouter.encodeSmartRouterTrade(
-              [
-                updatedOps,
-                signatureEncoded,
-                feeAsset.wrapped.address,
-                5000000000n,
-              ],
-              smartWalletDetails?.address,
-            );
-
-            await Promise.resolve(() =>
-              setTimeout(() => setTXState(ConfirmModalState.EXECUTING), 500),
-            );
-            let response = null;
-            if (
-              swapCallParams.config.SmartWalletTradeType ===
-                RouterTradeType.SmartWalletTrade ||
-              swapCallParams.config.SmartWalletTradeType ===
-                RouterTradeType.SmartWalletTradeWithPermit2
-            ) {
-              response = await SmartWalletRouter.sendTransactionFromRelayer(
-                chainId,
-                tradeEncoded,
-              );
-            } else {
-              response = await SmartWalletRouter.sendTransactionFromRelayer(
-                chainId,
-                tradeEncoded,
-                {
-                  externalClient: windowClient,
-                },
-              );
-            }
-            console.log(response);
-            setTx(response);
-            setTXState(ConfirmModalState.COMPLETED);
-            refetch();
-            console.log(response);
-            return response as TransactionReceipt;
-          })
-          .catch((err: unknown) => {
-            console.log(err);
-            setTXState(ConfirmModalState.FAILED);
-            if (err instanceof UserRejectedRequestError) {
-              throw new TransactionRejectedRpcError(
-                Error("Transaction rejected"),
-              );
-            }
-            throw new Error(`Swap Failed ${err as string}`);
-          });
+        await Promise.resolve(() =>
+          setTimeout(() => setTXState(ConfirmModalState.EXECUTING), 500),
+        );
+        let response = null;
+        if (
+          swapCallParams.config.SmartWalletTradeType ===
+            RouterTradeType.SmartWalletTrade ||
+          swapCallParams.config.SmartWalletTradeType ===
+            RouterTradeType.SmartWalletTradeWithPermit2
+        ) {
+          response = await SmartWalletRouter.sendTransactionFromRelayer(
+            chainId,
+            tradeEncoded,
+          );
+        } else {
+          response = await SmartWalletRouter.sendTransactionFromRelayer(
+            chainId,
+            tradeEncoded,
+            {
+              externalClient: windowClient,
+            },
+          );
+        }
+        setTx(response);
+        setTXState(ConfirmModalState.COMPLETED);
+        refetch();
+        console.log(response);
+        return response as TransactionReceipt;
+      })
+      .catch((err: unknown) => {
+        console.log(err);
+        setTXState(ConfirmModalState.FAILED);
+        if (err instanceof UserRejectedRequestError) {
+          throw new TransactionRejectedRpcError(Error("Transaction rejected"));
+        }
+        throw new Error(`Swap Failed ${err as string}`);
       })
       .catch(() => setTXState(ConfirmModalState.FAILED));
   }, [
@@ -468,7 +422,7 @@ const IndexPage = () => {
                 >
                   <div className=" flex w-full items-center justify-center">
                     <p className="mx-2 text-gray-300">
-                      {allowance?.smartWalletAllowances.needsApproval
+                      {allowance?.needsApproval
                         ? "Approve Smart Router"
                         : transactionStatusDisplay}
                     </p>
