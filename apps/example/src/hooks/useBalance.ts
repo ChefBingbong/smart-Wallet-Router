@@ -35,5 +35,5 @@ export const useTokenBalance = (
           : new BigNumber(0),
       [data],
     ),
-  };
+  } as any;
 };

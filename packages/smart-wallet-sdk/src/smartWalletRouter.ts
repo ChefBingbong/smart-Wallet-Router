@@ -9,24 +9,37 @@ import {
      type PancakeSwapOptions,
 } from "@pancakeswap/universal-router-sdk";
 import type { BaseError } from "abitype";
+import { ethers } from "ethers";
 import { erc20Abi as ERC20ABI, formatTransactionRequest, type Address, type Hex, type PublicClient } from "viem";
 import { bscTestnet } from "viem/chains";
-import { getContractError, getTransactionError, parseAbiItem, parseAccount } from "viem/utils";
-import { RouterTradeType, Routers } from "./encoder/buildOperation";
-import { OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
+import {
+     encodeAbiParameters,
+     getContractError,
+     getFunctionSelector,
+     getTransactionError,
+     parseAccount,
+} from "viem/utils";
+import { smartWalletAbi } from "./abis/SmartWalletAbi";
+import { Routers } from "./encoder/buildOperation";
+import { ABI_PARAMETER, OperationType, WalletOperationBuilder, encodeOperation } from "./encoder/walletOperations";
 import { permit2TpedData } from "./permit/permit2TypedData";
 import { getEthersProvider, getViemClient } from "./provider/client";
 import { getPublicClient, getWalletClient } from "./provider/walletClient";
 import { ClasicTrade } from "./trades/classicTrade";
-import type { ClassicTradeOptions, SmartWalletGasParams, SmartWalletTradeOptions, UserOp } from "./types/smartWallet";
+import type { ECDSAExecType } from "./types/eip712";
+import type {
+     ClassicTradeOptions,
+     PackedAllowance,
+     SmartWalletGasParams,
+     SmartWalletTradeOptions,
+     UserOp,
+     WalletAllownceDetails,
+} from "./types/smartWallet";
 import { getSmartWallet, getSmartWalletFactory } from "./utils/contracts";
 import { AccountNotFoundError } from "./utils/error";
 import { getNativeWrappedToken, getTokenPriceByNumber, getUsdGasToken } from "./utils/estimateGas";
 import { getSwapRouterAddress } from "./utils/getSwapRouterAddress";
 import { typedMetaTx } from "./utils/typedMetaTx";
-import type { ECDSAExecType } from "./types/eip712";
-import { smartWalletAbi } from "./abis/SmartWalletAbi";
-import { ethers } from "ethers";
 
 function calculateGasMargin(value: bigint, margin = 1000n): bigint {
      return (value * (10000n + margin)) / 10000n;
@@ -79,8 +92,11 @@ export abstract class SmartWalletRouter {
           const { address, nonce } = config.smartWalletDetails;
 
           const chainId = BigInt(config.chainId);
-          const permitNonce = config.allowance.permitNonce;
-          const { permitData } = permit2TpedData(planner.userOps[1].to, address, permitNonce);
+          const { inputAsset, feeAsset } = config.assets;
+          const { permitData } = permit2TpedData([inputAsset, feeAsset], address, [
+               BigInt(config.allowance.t0nonce),
+               BigInt(config.allowance.t1nonce),
+          ]);
           const smartWalletTypedData = typedMetaTx(
                userOps,
                bridgeOps,
@@ -233,40 +249,71 @@ export abstract class SmartWalletRouter {
      }
 
      public static async getContractAllowance(
-          tokenAddress: Address,
+          tokens: Address[],
           owner: Address,
           spender: Address,
           chainId: ChainId,
-          amountToCheck?: bigint,
-     ): Promise<{ allowance: bigint; needsApproval: boolean; permitNonce: bigint }> {
+          amount: bigint,
+     ): Promise<WalletAllownceDetails> {
           try {
                const client = getViemClient({ chainId });
 
-               const [, , nonce] = await client.readContract({
-                    functionName: "allowance",
-                    args: [owner, tokenAddress, spender],
-                    address: spender,
-                    abi: smartWalletAbi,
-               });
-               const allowance = await client.readContract({
-                    functionName: "allowance",
-                    args: [owner, spender],
-                    address: tokenAddress,
-                    abi: ERC20ABI,
+               const [[, , t0nonce], [, , t1nonce]] = (await client.multicall({
+                    contracts: [
+                         ...tokens.map((token) => ({
+                              functionName: "allowance",
+                              args: [owner, token, spender],
+                              address: spender,
+                              abi: smartWalletAbi,
+                         })),
+                    ],
+                    allowFailure: false,
+               })) as unknown as [PackedAllowance, PackedAllowance];
+
+               const allowances = (await client.multicall({
+                    contracts: [
+                         ...tokens.map((token) => ({
+                              functionName: "allowance",
+                              args: [owner, spender],
+                              address: token,
+                              abi: ERC20ABI,
+                         })),
+                    ],
+                    allowFailure: false,
+               })) as [bigint, bigint];
+
+               const [t0Allowance, t1Allowance] = allowances.map((all) => {
+                    if (all < amount) return { allowance: all, needsApproval: false };
+                    return { allowance: all, needsApproval: true };
                });
 
-               let needsApproval = false;
-               if (amountToCheck && allowance < amountToCheck) needsApproval = true;
-
-               return { allowance, needsApproval, permitNonce: BigInt(nonce) };
+               return { t0Allowance, t1Allowance, t0nonce, t1nonce };
           } catch (error) {
-               throw getContractError(error as BaseError, {
-                    abi: ERC20ABI,
-                    address: tokenAddress,
-                    args: [owner, spender],
-                    functionName: "allowance",
-               });
+               console.log(
+                    getContractError(error as BaseError, {
+                         abi: ERC20ABI,
+                         address: tokens[0],
+                         args: [owner, spender],
+                         functionName: "allowance",
+                    }),
+               );
+
+               return {
+                    t0Allowance: { allowance: 0n, needsApproval: false },
+                    t1Allowance: {
+                         allowance: 0n,
+                         needsApproval: false,
+                    },
+                    t0nonce: 0,
+                    t1nonce: 0,
+               };
           }
+     }
+
+     public static async encodeWalletCreationOp(args: [Address], to: Address) {
+          const { encodedSelector, encodedInput } = encodeOperation(OperationType.CREATE_WALLET, args);
+          const operationCalldata = encodedSelector.concat(encodedInput.substring(2)) as Hex;
+          return { to, amount: 1.5 * 10 ** 9, data: operationCalldata };
      }
 
      public static async encodeSmartRouterTrade(args: [ECDSAExecType, Hex], to: Address, chainId: ChainId) {
@@ -279,11 +326,16 @@ export abstract class SmartWalletRouter {
      public static async getUserSmartWalletDetails(userAddress: Address, chainId: ChainId) {
           const publicClient = getPublicClient({ chainId });
           const factory = getSmartWalletFactory(chainId);
-          const address = await factory.read.walletAddress([userAddress, BigInt(0)]);
 
-          const code = await publicClient.getBytecode({ address });
-          const smartWallet = getSmartWallet(chainId, address);
-          const nonce = code !== "0x" ? await smartWallet.read.nonce() : BigInt(0);
-          return { address, nonce, wallet: smartWallet };
+          let address = await factory.read.walletAddress([userAddress, BigInt(0)]);
+          let smartWallet = getSmartWallet(chainId, address);
+          try {
+               const code = await publicClient.getBytecode({ address });
+               const nonce = code !== "0x" ? await smartWallet.read.nonce() : BigInt(0);
+               return { address, nonce, wallet: smartWallet };
+          } catch (error) {
+               console.log(error);
+               return { address, nonce: 0n, wallet: smartWallet };
+          }
      }
 }

@@ -10,8 +10,7 @@ import type {
 } from "@pancakeswap/swap-sdk-core";
 import { LoadingSpinner } from "@saas-ui/react";
 import { useTokenBalance } from "~/hooks/useBalance";
-import BigNumber from "bignumber.js";
-import { TransactionReceipt } from "viem";
+import type { TransactionReceipt } from "viem";
 import { ConfirmModalState } from "~/pages";
 
 export const TransactionCard = ({
@@ -43,7 +42,7 @@ export const TransactionCard = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const relayerBalance = useTokenBalance(
-    feeAsset.address,
+    feeAsset.wrapped.address,
     "0xdBf48f5DB3d4bd13b9a29052947cB2edD6a2d132",
   );
   const userBalance = useTokenBalance(toAsset.wrapped.address);
@@ -64,8 +63,12 @@ export const TransactionCard = ({
 
   useEffect(() => {
     if (
-      txState === ConfirmModalState.APPROVING_TOKEN ||
-      (txState === ConfirmModalState.PENDING_CONFIRMATION && !isOpen)
+      (!isOpen && (txState === ConfirmModalState.APPROVING_TOKEN || txState === ConfirmModalState.PERMITTING))
+    ) {
+      toggleAccordion();
+    }
+    if (
+      (isOpen && txState === ConfirmModalState.FAILED)
     ) {
       toggleAccordion();
     }

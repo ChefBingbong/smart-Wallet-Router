@@ -22,7 +22,8 @@ export interface ClassicTradeOptions<TOps> extends BaseTradeOptions<TOps> {
 export interface SmartWalletTradeOptions extends BaseTradeOptions<PancakeSwapOptions> {
      hasApprovedPermit2: boolean;
      hasApprovedRelayer: boolean;
-     allowance: { allowance: bigint; needsApprval: boolean; permitNonce: bigint };
+     assets: { inputAsset: Address; feeAsset: Address; outputAsset: Address };
+     allowance: WalletAllownceDetails;
      isUsingPermit2: boolean;
      walletPermitOptions?: SmartWalletPermitOptions;
      smartWalletDetails: { address: Address; nonce: bigint };
@@ -65,6 +66,14 @@ export type FeeResponse = {
      gasCostInUSD: number;
 };
 
+export type PackedAllowance = [bigint, Address, number];
+export type TokenAllowance = { allowance: bigint; needsApproval: boolean };
+export type WalletAllownceDetails = {
+     t0Allowance: TokenAllowance;
+     t1Allowance: TokenAllowance;
+     t0nonce: number;
+     t1nonce: number;
+};
 export type SmartWalletGasParams = {
      feeAsset: string;
      inputCurrency: Currency;

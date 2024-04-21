@@ -4,6 +4,7 @@ import { CurrencyAmount, type ChainId, type Currency } from "@pancakeswap/sdk";
 import { CopyIcon } from "@pancakeswap/uikit";
 import { LoadingSpinner } from "@saas-ui/react";
 import {
+  Deployments,
   RouterTradeType,
   SmartWalletRouter,
 } from "@smart-wallet/smart-router-sdk";
@@ -32,6 +33,7 @@ import {
 } from "wagmi";
 import { SliderToggleButton } from "~/components/TabSelect";
 import { TransactionCard } from "~/components/TransactionDetails";
+import { useTokenBalance } from "~/hooks/useBalance";
 import useDebounce from "~/hooks/useDebounce";
 import { useSmartRouterBestTrade } from "~/hooks/useSmartRouterBestTrade";
 import { useTheme } from "~/hooks/useTheme";
@@ -75,7 +77,21 @@ const IndexPage = () => {
     asset,
     toAsset,
   );
+  const assetBalance = useTokenBalance(
+    asset.wrapped.address,
+    address!,
+  );
+  const feeBalance = useTokenBalance(feeAsset.wrapped.address);
 
+  const formatAssetBalance = useMemo(
+    () => assetBalance.balance.shiftedBy(-asset.decimals).toFixed(3),
+    [assetBalance, asset],
+  );
+
+  const formatFeeBalance = useMemo(
+    () => feeBalance.balance.shiftedBy(-feeAsset.decimals).toFixed(3),
+    [feeBalance, feeAsset],
+  );
   const amount = useMemo(
     () =>
       CurrencyAmount.fromRawAmount(
@@ -107,7 +123,7 @@ const IndexPage = () => {
   );
 
   const { data: smartWalletDetails, refetch } = useQuery({
-    queryKey: ["smartWalletDetails", address, chainId],
+    queryKey: ["smartWalletDetails", address, chainId ?? 0],
     queryFn: async () => {
       if (!address || !chainId) return;
       return SmartWalletRouter.getUserSmartWalletDetails(address, chainId);
@@ -117,14 +133,14 @@ const IndexPage = () => {
     enabled: Boolean(address && chainId),
   });
 
-  const { data: allowance } = useQuery({
-    queryKey: ["allowance-query", chainId, asset.symbol, address, chainId],
+  const { data: allowance, refetch: refetchAlloance } = useQuery({
+    queryKey: ["allowance-query", chainId, asset.symbol, feeAsset.symbol, address, chainId],
     queryFn: async () => {
-      if (!asset || !chainId || !address || !smartWalletDetails || !amount)
+      if (!asset || !chainId || !address || !smartWalletDetails || !amount || !feeAsset)
         return undefined;
 
       return  SmartWalletRouter.getContractAllowance(
-        asset.wrapped.address,
+        [asset.wrapped.address, feeAsset.wrapped.address],
         address,
         smartWalletDetails?.address,
         chainId,
@@ -188,7 +204,7 @@ const IndexPage = () => {
       allowance,
       smartWalletDetails as never,
       chainId,
-      undefined
+      { inputAsset: asset.wrapped.address, feeAsset: feeAsset.wrapped.address, outputAsset: toAsset.wrapped.address }
     );
     return SmartWalletRouter.buildSmartWalletTrade(trade, options);
   }, [trade, address, chainId, allowance, smartWalletDetails, fees, feeAsset]);
@@ -229,8 +245,20 @@ const IndexPage = () => {
           [chainId, signature],
         );
 
+       if(values.nonce === 0n) {
+        const walletDeploymentOp = await SmartWalletRouter.encodeWalletCreationOp(
+          [address],
+          Deployments[chainId].ECDSAWalletFactory
+        );
+
+        const response = await SmartWalletRouter.sendTransactionFromRelayer(
+          chainId,
+          walletDeploymentOp as any,
+        );
+        console.log(response)
+       }
         const tradeEncoded = await SmartWalletRouter.encodeSmartRouterTrade(
-          [values, signatureEncoded],
+          [values, signatureEncoded as any],
           smartWalletDetails?.address!,
           chainId
         );
@@ -248,18 +276,18 @@ const IndexPage = () => {
         ) {
           response = await SmartWalletRouter.sendTransactionFromRelayer(
             chainId,
-            tradeEncoded,
+            tradeEncoded as any,
           );
         } else {
           response = await SmartWalletRouter.sendTransactionFromRelayer(
             chainId,
-            tradeEncoded,
+            tradeEncoded as any,
             {
-              externalClient: windowClient,
+              externalClient: windowClient as any,
             },
           );
         }
-        setTx(response);
+        setTx(response as any);
         setTXState(ConfirmModalState.COMPLETED);
         refetch();
         console.log(response);
@@ -281,7 +309,6 @@ const IndexPage = () => {
     chainId,
     allowance,
     smartWalletDetails,
-    fees,
   ]);
 
   useEffect(() => {
@@ -422,7 +449,7 @@ const IndexPage = () => {
                 >
                   <div className=" flex w-full items-center justify-center">
                     <p className="mx-2 text-gray-300">
-                      {allowance?.needsApproval
+                      {allowance?.t0Allowance.needsApproval
                         ? "Approve Smart Router"
                         : transactionStatusDisplay}
                     </p>
@@ -440,6 +467,18 @@ const IndexPage = () => {
                   </div>
                 </button>
               </div>
+              <div className="mb-2 flex w-full justify-between">
+            <div className="bold   text-ml">{`Your ${asset.symbol} Balance`}</div>
+            <div className="overflow-ellipsis text-[17px]   ">
+              {`${formatAssetBalance} ${asset.symbol}`}
+            </div>
+          </div>
+         {feeAsset.symbol !== asset.symbol && <div className="mb-2 flex w-full justify-between">
+            <div className="bold  text-ml">{`Your ${feeAsset.symbol} Balance`}</div>
+            <div className="overflow-ellipsis text-[17px]  ">
+              {`${formatFeeBalance} ${feeAsset.symbol}`}
+            </div>
+          </div>}
             </div>
           </div>
         </div>

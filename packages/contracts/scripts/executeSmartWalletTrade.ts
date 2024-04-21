@@ -164,6 +164,11 @@ async function main(config: ScriptConfig) {
     baseAsset.address,
     userSmartWalletAddress,
   );
+  const allowance2 = await userSmartWallet.allowance(
+    user,
+    feeAsset.address,
+    userSmartWalletAddress,
+  );
   const permitDetails: AllowanceOp = {
     details: [
       {
@@ -177,7 +182,7 @@ async function main(config: ScriptConfig) {
         token: feeAsset.address,
         amount: MaxAllowanceTransferAmount,
         expiration: BigInt(toDeadline(PERMIT_EXPIRATION)),
-        nonce: BigInt(allowance.nonce + 1), // only increment if both permits are same asset
+        nonce: BigInt(allowance2.nonce), // only increment if both permits are same asset
       },
     ],
     spender: permit2Address,
@@ -218,14 +223,14 @@ async function main(config: ScriptConfig) {
         onChainProvider: () => getViemClient({ chainId }),
         v2SubgraphProvider: () => getV2Subgraphs({})[chainId as never],
         v3SubgraphProvider: () => getV3Subgraphs({})[chainId],
-        currencyA: CAKE,
-        currencyB: BUSD,
+        currencyA: baseAsset,
+        currencyB: quoteAsset,
       } as never),
       SmartRouter.getV3CandidatePools({
         onChainProvider: () => getViemClient({ chainId }),
         subgraphProvider: () => getV3Subgraphs({})[chainId],
-        currencyA: CAKE,
-        currencyB: BUSD,
+        currencyA: baseAsset,
+        currencyB: quoteAsset,
         subgraphFallback: true,
       } as never),
     ]);
@@ -233,7 +238,7 @@ async function main(config: ScriptConfig) {
 
     bestTradeRoute = (await SmartRouter.getBestTrade(
       amountIn,
-      BUSD,
+      quoteAsset,
       TradeType.EXACT_INPUT,
       {
         gasPriceWei: await getViemClient({ chainId }).getGasPrice(),
@@ -380,7 +385,7 @@ function parseContractError<T>(err: T): string {
 main({
   baseAsset: "CAKE",
   quoteAsset: "BUSD",
-  feeAsset: "CAKE",
+  feeAsset: "BUSD",
   amountIn: BigInt(1 * 10 ** 18),
 }).catch((error) => {
   console.error(error);

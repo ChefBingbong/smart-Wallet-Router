@@ -1,7 +1,8 @@
 import type { PermitTransferFrom, Witness } from "@pancakeswap/permit2-sdk";
 import { MaxAllowanceTransferAmount, PERMIT_EXPIRATION } from "@pancakeswap/permit2-sdk";
 import type { Address } from "viem";
-import type { AllowanceOp } from "../types/smartWallet";
+import type { AllowanceOp, WalletAllownceDetails } from "../types/smartWallet";
+import _isEqual from "lodash/isEqual";
 
 export const PERMIT_SIG_EXPIRATION = 1800000; // 30 min
 
@@ -40,26 +41,22 @@ export const generatePermitTransferFromTypedData = (
      return { permit, witness };
 };
 
-export const permit2TpedData = (token: Address, spender: Address, nonce: bigint): { permitData: AllowanceOp } => {
-     if (!token) throw new Error("PERMIT: missing token");
+export const permit2TpedData = (
+     tokens: Address[],
+     spender: Address,
+     nonces: [bigint, bigint],
+): { permitData: AllowanceOp } => {
+     if (!tokens) throw new Error("PERMIT: missing token");
      if (!spender) throw new Error("PERMIT: missing spender");
-     if (!token) throw new Error("PERMIT: missing token");
 
+     const sameTokens = _isEqual(tokens[0], tokens[1]);
      const allowanceOps = {
-          details: [
-               {
-                    token: token,
-                    amount: MaxAllowanceTransferAmount,
-                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
-                    nonce,
-               },
-               {
-                    token: token,
-                    amount: MaxAllowanceTransferAmount,
-                    expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
-                    nonce: nonce + 1n,
-               },
-          ],
+          details: tokens.map((token, i) => ({
+               token: token,
+               amount: MaxAllowanceTransferAmount,
+               expiration: BigInt(toDeadline(PERMIT_EXPIRATION).toString()),
+               nonce: i > 0 ? (sameTokens ? nonces[1] + 1n : nonces[1]) : nonces[0],
+          })),
           spender,
           sigDeadline: BigInt(toDeadline(PERMIT_SIG_EXPIRATION)),
      } as AllowanceOp;

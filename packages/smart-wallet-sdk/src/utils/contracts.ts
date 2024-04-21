@@ -14,7 +14,7 @@ export const getSmartWalletFactory = (chainId: ChainId) => {
 
 export const getSmartWallet = (chainId: ChainId, address: Address) => {
      const client = getPublicClient({ chainId });
-     return getContract({ address, client, abi: walletAbi as typeof walletAbi });
+     return getContract({ address, client, abi: walletAbi });
 };
 
 export const getErc20Contract = (chainId: ChainId, address: Address) => {

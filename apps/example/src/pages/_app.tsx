@@ -16,7 +16,7 @@ const inter = Inter({
 
 const queryClient = new QueryClient();
 
-export const wagmiconfig = createConfig({
+export const wagmiconfig: any = createConfig({
   storage: createStorage({
     storage: typeof window !== "undefined" ? window.localStorage : noopStorage,
     key: "wagmi_v1.1",

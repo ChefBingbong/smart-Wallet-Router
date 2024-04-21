@@ -52,4 +52,5 @@ export type TradeQuotePayload = {
   chainId: ChainId;
   amount: string;
   account: Address;
+
 };
