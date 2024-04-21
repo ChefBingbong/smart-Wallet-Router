@@ -108,8 +108,8 @@ importers:
         specifier: ^2.7.4
         version: 2.7.4(@chakra-ui/react@2.8.2)(@emotion/react@11.11.4)(@emotion/styled@11.11.5)(framer-motion@11.0.28)(react-dom@18.2.0)(react@18.2.0)
       '@smart-wallet/smart-router-sdk':
-        specifier: workspace:*
-        version: link:../../packages/smart-wallet-sdk
+        specifier: file:../../packages/smart-wallet-sdk/src
+        version: file:packages/smart-wallet-sdk/src
       '@t3-oss/env-nextjs':
         specifier: ^0.9.2
         version: 0.9.2(typescript@5.4.5)(zod@3.22.4)
@@ -18336,4 +18336,9 @@ packages:
       '@types/react': 18.2.79
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
+  file:packages/smart-wallet-sdk/src:
+    resolution: {directory: packages/smart-wallet-sdk/src, type: directory}
+    name: src
     dev: false
