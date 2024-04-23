@@ -6,6 +6,7 @@ import {IERC1271} from "./interfaces/IERC1271.sol";
 import {SmartWalletHasher} from "./libraries/HasherLib.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import "./ECDSAWalletState.sol";
+pragma experimental ABIEncoderV2;
 
 abstract contract ECDSAWalletView is ECDSAWalletState {
   error SignatureExpired(string message);
@@ -19,7 +20,7 @@ abstract contract ECDSAWalletView is ECDSAWalletState {
   error InvalidSignature(string message);
   error InvalidSigner(string message);
 
-  address public constant bridgeVerifier = 0x11632F9766Ee9d9317F95562a6bD529652ead78f;
+  address public constant bridgeVerifier = 0x4f1F87d512650f32bf9949C4c5Ef37a3cc891C6D;
 
   function _verifyECDSAExecRequest(bytes memory signature, bytes32 hash, address claimedSigner) public view {
     if (claimedSigner.code.length > 0) {
@@ -80,5 +81,9 @@ abstract contract ECDSAWalletView is ECDSAWalletState {
     uint8 v = uint8(uint256(vs >> 255)) + 27;
     address signer = ecrecover(hash, v, r, s);
     return signer;
+  }
+
+  function getUserValidatedData(uint256 _nonce) public view returns (ECDSAExecValidationDetails memory) {
+    return validationResultsMap[_nonce];
   }
 }

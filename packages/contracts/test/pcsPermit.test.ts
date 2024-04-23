@@ -23,6 +23,8 @@ import {
   WalletBridgeVerifier__factory,
   WalletBridgeVerifier,
   PQR,
+  ICALLER__factory,
+  CALLER__factory,
 } from "../typechain-types";
 import { sign } from "./utils/sign";
 import type { AllowanceOp, UserOp } from "./utils/sign";
@@ -80,11 +82,21 @@ describe("Permit2 Signature Transfer", () => {
     amm = await AMM.connect(OWNER).deploy(cake.address, busd.address);
     await amm.deployed();
 
+    const Caler = (await ethers.getContractFactory(
+      "CALLER",
+    )) as CALLER__factory;
+
+    const caller = await Caler.connect(OWNER).deploy();
+    await caller.deployed();
+    //     console.log(bridgeVerifier.address, "hhsssh
+
     const BridgeVerifiewr = (await ethers.getContractFactory(
       "WalletBridgeVerifier",
     )) as WalletBridgeVerifier__factory;
 
-    bridgeVerifier = await BridgeVerifiewr.connect(OWNER).deploy();
+    bridgeVerifier = await BridgeVerifiewr.connect(OWNER).deploy(
+      caller.address,
+    );
     await bridgeVerifier.deployed();
     console.log(bridgeVerifier.address, "hhssshh");
     const Wallet = (await ethers.getContractFactory(
@@ -111,6 +123,14 @@ describe("Permit2 Signature Transfer", () => {
     busd.connect(OWNER).transfer(amm.address, "100000000000000000000");
 
     cake.connect(OWNER).transfer(ALICE.address, "100000000000000000000");
+    console.log(
+      amm.address,
+      OWNER.address,
+      ALICE.address,
+      factory.address,
+      cake.address,
+      busd.address,
+    );
   });
 
   async function deployERC20() {
@@ -130,6 +150,7 @@ describe("Permit2 Signature Transfer", () => {
   // ----- UPDATE PARNER -----
   it("User should be able to create a wallet for themselves.", async () => {
     const alicewalletAddress = await factory.walletAddress(ALICE.address, 0);
+    console.log(alicewalletAddress);
     await factory
       .connect(ALICE)
       .createWallet(ALICE.address, { value: 15000000000 });
@@ -215,14 +236,27 @@ describe("Permit2 Signature Transfer", () => {
       },
     ] as UserOp[];
 
-    const bridgeOps = [] as UserOp[];
+    const bridgeOps = [
+      {
+        to: walletTransferMeta.to,
+        amount: 0n,
+        chainId: 31337,
+        data: "0x",
+      },
+    ] as UserOp[];
 
+    console.log(
+      userOps.forEach((op) => {
+        console.log(op.data);
+      }),
+    );
     const signedDataValues = await sign(
       userOps,
       bridgeOps,
       allowanceOps,
       0,
       ALICE,
+      31337,
       31337,
       31337,
       aliceWallet.address,
@@ -237,7 +271,7 @@ describe("Permit2 Signature Transfer", () => {
 
     const relayerTx = await OWNER.sendTransaction(execMeta);
     const receipt = await relayerTx.wait(1);
-    console.log(receipt);
+    //     console.log(receipt);
 
     console.log(formatEther(await busd.balanceOf(ALICE.address)));
     console.log(formatEther(await cake.balanceOf(ALICE.address)));

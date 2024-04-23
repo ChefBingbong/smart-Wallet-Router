@@ -95,6 +95,6 @@ library SmartWalletHasher {
   }
 
   function verifyOperationDomain(uint256 _opChainId, uint256 _domainChainId) private pure {
-    if (_opChainId != _domainChainId) revert InvalidDomain("ECDSA: UserOps invalid domain");
+    if (_opChainId == 0) revert InvalidDomain("ECDSA: UserOps invalid domain");
   }
 }

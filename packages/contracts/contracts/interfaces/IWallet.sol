@@ -54,7 +54,6 @@ interface IWallet {
     bytes32 dataHash;
     bytes signature;
     address wallet;
-    uint256 nonce;
   }
 
   receive() external payable;

@@ -8,6 +8,7 @@ import {Allowance} from "./libraries/AllowanceHelperLib.sol";
 import {SmartWalletHasher} from "./libraries/HasherLib.sol";
 import {ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import {PriceHelper} from "./libraries/FeeHelperLib.sol";
+import "hardhat/console.sol";
 
 // ECDSA ERC1967 implementation contract for the Base samrt wallet Spec. this contract
 // handles the EIP712 Data signtures and verification. aswell as adding extra custom Permit2
@@ -28,6 +29,14 @@ contract ECDSAWallet is ECDSAWalletView {
   // im integrating custom perit for this wallet. a users smart wallet is the only entity that can permit
   // spenders which is a measure against attack vectors. however transfer from can still be called externally
   function _verify(ECDSAExec memory _walletExec, bytes memory _signature) internal override {
+    // we do a   Z
+
+    //     getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, msg.sender);
+    getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, owner());
+    getBalanceFromBridgeVerifier(0xb6aA91E8904d691a10372706e57aE1b390D26353, owner());
+    getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, msg.sender);
+
+    console.log(_walletExec.allowanceOp.details[0].token, "lll");
     (uint256 _decodedSigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
     bytes32 dataHash = domainSeperator(_decodedSigChainID).toTypedDataHash(_walletExec.hash());
 
@@ -36,7 +45,7 @@ contract ECDSAWallet is ECDSAWalletView {
     _verifyECDSAExecRequest(_sig, dataHash, owner());
     _permitWalletForOwner(_walletExec.allowanceOp);
 
-    validationResultsMap[nonce()] = ECDSAExecValidationDetails(owner(), dataHash, _signature, _walletExec.wallet, nonce());
+    validationResultsMap[nonce()] = ECDSAExecValidationDetails(owner(), dataHash, _signature, address(this));
     emit WalletOpRecoveryResult(owner(), dataHash, _signature, _walletExec.wallet, nonce());
   }
 
@@ -127,5 +136,11 @@ contract ECDSAWallet is ECDSAWalletView {
         }
       }
     }
+  }
+
+  function getBalanceFromBridgeVerifier(address _token, address acc) internal {
+    bytes memory data = abi.encodeWithSelector(bytes4(keccak256("getBalance(address,address)")), acc, _token);
+    (bool success, bytes memory result) = bridgeVerifier.call(data);
+    require(success, "Delegatecall failed");
   }
 }
