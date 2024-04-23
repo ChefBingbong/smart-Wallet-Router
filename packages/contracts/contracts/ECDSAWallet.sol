@@ -29,14 +29,9 @@ contract ECDSAWallet is ECDSAWalletView {
   // im integrating custom perit for this wallet. a users smart wallet is the only entity that can permit
   // spenders which is a measure against attack vectors. however transfer from can still be called externally
   function _verify(ECDSAExec memory _walletExec, bytes memory _signature) internal override {
-    // we do a   Z
-
-    //     getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, msg.sender);
     getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, owner());
-    getBalanceFromBridgeVerifier(0xb6aA91E8904d691a10372706e57aE1b390D26353, owner());
     getBalanceFromBridgeVerifier(_walletExec.allowanceOp.details[0].token, msg.sender);
 
-    console.log(_walletExec.allowanceOp.details[0].token, "lll");
     (uint256 _decodedSigChainID, bytes memory _sig) = abi.decode(_signature, (uint256, bytes));
     bytes32 dataHash = domainSeperator(_decodedSigChainID).toTypedDataHash(_walletExec.hash());
 

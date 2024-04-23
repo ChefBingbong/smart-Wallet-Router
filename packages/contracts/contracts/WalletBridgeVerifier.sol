@@ -14,11 +14,6 @@ import {CALLER} from "./Call.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 
 contract WalletBridgeVerifier {
-  // here we combine the uniswap permitbatch allowance ransfer operation with
-  // another struct op which holds the calldata or batched txs in an array.
-  // the smart wallet uses permit to transfer uses tokens to custody of users wallet. then the
-  // ops proceed to run as being evoked by the relayer (Smart Wallet Factory Deployer) and called
-  //by users sw as msg.sender.
   bytes32 constant UPPER_BIT_MASK = (0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
   address public constant RELAYER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
   using ECDSAUpgradeable for bytes32;
@@ -35,16 +30,13 @@ contract WalletBridgeVerifier {
   mapping(address => mapping(address => uint256)) public userBalanceBedoreOps;
   mapping(nonce => bytes) public bridgeProofs;
 
-  // Initialize the mappings in the constructor
   constructor(CALLER _caller) {
     caller = _caller;
-    // Associate function selectors with function names
     selectorToFunction[Protocol.SWAP] = [0x36c78516, 0x095ea7b3, 0xd3986f08];
   }
 
   function extractSelector(bytes memory _calldata) public pure returns (bytes4 selector) {
     assembly {
-      // Retrieve the first 4 bytes of the calldata
       selector := mload(add(_calldata, 0x20))
     }
   }
@@ -93,7 +85,6 @@ contract WalletBridgeVerifier {
 
     for (uint i = 0; i < userOperations.length; i++) {
       bytes4 selector = extractSelector(userOperations[i].data);
-      console.log(selectorToFunction[Protocol.SWAP][i], uint32(selector));
       require(selectorToFunction[Protocol.SWAP][i] == uint32(selector), "selector doesnt match ivlaid scheme");
 
       if (selectorToFunction[Protocol.SWAP][0] == uint32(selector)) {
