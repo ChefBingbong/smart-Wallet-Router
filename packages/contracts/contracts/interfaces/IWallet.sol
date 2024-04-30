@@ -56,6 +56,12 @@ interface IWallet {
     address wallet;
   }
 
+  struct Signature {
+    address signer;
+    bytes signatureData;
+    bool dynamic;
+  }
+
   receive() external payable;
 
   function nonce() external view returns (uint256);
@@ -64,6 +70,8 @@ interface IWallet {
 
   function exec(ECDSAExec memory _walletExec, bytes memory _signature) external;
 
+  function execBridge(ECDSAExec memory _walletExec, bytes memory _signature, bytes memory _bridgeProof) external;
+
   function execFomEoa(UserOp[] calldata userOps) external;
 
   function allowance(address user, address token, address spender) external view returns (uint160 amount, uint48 expiration, uint48 nonce);
@@ -71,4 +79,8 @@ interface IWallet {
   function approve(address token, address spender, uint160 amount, uint48 expiration) external;
 
   function transferFrom(address from, address to, uint160 amount, address token) external;
+
+  function getUserValidatedData(uint256 _nonce) external view returns (ECDSAExecValidationDetails memory);
+
+  function _verifySignatures(bytes memory signatures, bytes32 dataHash, address executor, uint256 requiredSignatures) external view;
 }

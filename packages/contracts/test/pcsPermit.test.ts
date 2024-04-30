@@ -26,7 +26,7 @@ import {
   ICALLER__factory,
   CALLER__factory,
 } from "../typechain-types";
-import { sign } from "./utils/sign";
+import { TxType, sign, signMessage } from "./utils/sign";
 import type { AllowanceOp, UserOp } from "./utils/sign";
 
 import {
@@ -48,7 +48,17 @@ import { PermitTransferFrom } from "@pancakeswap/permit2-sdk";
 import { Console } from "console";
 import { ERC20Token } from "@pancakeswap/sdk";
 import { maxUint256, zeroAddress } from "viem";
-import { formatEther } from "ethers/lib/utils";
+import {
+  defaultAbiCoder,
+  formatEther,
+  keccak256,
+  toUtf8Bytes,
+} from "ethers/lib/utils";
+import {
+  buildContractSignature,
+  buildSignature,
+  buildSignatureBytes,
+} from "./utils/buildSignatures";
 
 describe("Permit2 Signature Transfer", () => {
   // const PERMIT2_ADDRESS = getPermit2Address(97);
@@ -64,6 +74,7 @@ describe("Permit2 Signature Transfer", () => {
 
   // Wallets
   let aliceWallet: ECDSAWallet;
+  let wallet: SmartWalletFactory;
   let amm: AMMSwap;
 
   let weth: ABC;
@@ -82,28 +93,18 @@ describe("Permit2 Signature Transfer", () => {
     amm = await AMM.connect(OWNER).deploy(cake.address, busd.address);
     await amm.deployed();
 
-    const Caler = (await ethers.getContractFactory(
-      "CALLER",
-    )) as CALLER__factory;
-
-    const caller = await Caler.connect(OWNER).deploy();
-    await caller.deployed();
-    //     console.log(bridgeVerifier.address, "hhsssh
-
     const BridgeVerifiewr = (await ethers.getContractFactory(
       "WalletBridgeVerifier",
     )) as WalletBridgeVerifier__factory;
 
-    bridgeVerifier = await BridgeVerifiewr.connect(OWNER).deploy(
-      caller.address,
-    );
+    bridgeVerifier = await BridgeVerifiewr.connect(OWNER).deploy();
     await bridgeVerifier.deployed();
     console.log(bridgeVerifier.address, "hhssshh");
     const Wallet = (await ethers.getContractFactory(
       "SmartWalletFactory",
     )) as SmartWalletFactory__factory;
 
-    const wallet = await Wallet.connect(OWNER).deploy(
+    wallet = await Wallet.connect(OWNER).deploy(
       weth.address,
       amm.address,
       amm.address,
@@ -118,16 +119,17 @@ describe("Permit2 Signature Transfer", () => {
     factory = await WalletFactory.connect(OWNER).deploy(wallet.address);
     await factory.deployed();
 
-    weth.connect(OWNER).transfer(amm.address, "100000000000000000000");
-    cake.connect(OWNER).transfer(amm.address, "100000000000000000000");
-    busd.connect(OWNER).transfer(amm.address, "100000000000000000000");
+    weth.connect(OWNER).transfer(amm.address, "1000000000000000000000");
+    cake.connect(OWNER).transfer(amm.address, "1000000000000000000000");
+    busd.connect(OWNER).transfer(amm.address, "1000000000000000000000");
 
-    cake.connect(OWNER).transfer(ALICE.address, "100000000000000000000");
+    cake.connect(OWNER).transfer(ALICE.address, "1000000000000000000000");
     console.log(
       amm.address,
       OWNER.address,
       ALICE.address,
       factory.address,
+      "bbbbbbb",
       cake.address,
       busd.address,
     );
@@ -204,7 +206,7 @@ describe("Permit2 Signature Transfer", () => {
       .populateTransaction.transferFrom(
         ALICE.address,
         aliceWallet.address,
-        amount,
+        amount * 2n,
         cake.address,
       );
     const approveAMMMeta = await cake
@@ -212,6 +214,14 @@ describe("Permit2 Signature Transfer", () => {
       .populateTransaction.approve(amm.address, amount);
 
     const swapMeta = await amm
+      .connect(OWNER)
+      .populateTransaction.swap(amount, reciever);
+
+    const approveAMMMeta2 = await cake
+      .connect(OWNER)
+      .populateTransaction.approve(amm.address, amount);
+
+    const swapMeta2 = await amm
       .connect(OWNER)
       .populateTransaction.swap(amount, reciever);
 
@@ -238,10 +248,16 @@ describe("Permit2 Signature Transfer", () => {
 
     const bridgeOps = [
       {
-        to: walletTransferMeta.to,
+        to: approveAMMMeta2.to,
         amount: 0n,
         chainId: 31337,
-        data: "0x",
+        data: approveAMMMeta2.data,
+      },
+      {
+        to: swapMeta2.to,
+        amount: 0n,
+        chainId: 31337,
+        data: swapMeta2.data,
       },
     ] as UserOp[];
 
@@ -256,11 +272,26 @@ describe("Permit2 Signature Transfer", () => {
       allowanceOps,
       0,
       ALICE,
+      OWNER,
       31337,
       31337,
       31337,
       aliceWallet.address,
+      TxType.SourceChainOp,
     );
+
+    // const signedDataBridgeValues = await sign(
+    //   userOps,
+    //   bridgeOps,
+    //   allowanceOps,
+    //   0,
+    //   OWNER,
+    //   31337,
+    //   31337,
+    //   31337,
+    //   aliceWallet.address,
+    //   TxType.SourceChainOp,
+    // );
 
     const execMeta = await aliceWallet
       .connect(OWNER)
@@ -268,10 +299,67 @@ describe("Permit2 Signature Transfer", () => {
         signedDataValues.values,
         signedDataValues.signature,
       );
+    // const execMeta2 = await aliceWallet
+    //   .connect(OWNER)
+    //   .populateTransaction.execBridge(
+    //     signedDataValues.values,
+    //     signedDataValues.signature,
+    //     signedDataBridgeValues.signature,
+    //   );
+    const consig = buildContractSignature(aliceWallet.address, "0x");
+    const usersig = buildSignature(ALICE.address, signedDataValues.s2);
+    const sigs = buildSignatureBytes([usersig, consig]);
+    console.log("dd");
 
+    console.log(sigs);
+    // console.log(keccak256(defaultAbiCoder.encode(execMeta)));
     const relayerTx = await OWNER.sendTransaction(execMeta);
+
+    // await cake
+    //   .connect(OWNER)
+    //   .transfer(aliceWallet.address, "1000000000000000000");
+    // const relayerTx2 = await OWNER.sendTransaction(execMeta2);
+
     const receipt = await relayerTx.wait(1);
-    //     console.log(receipt);
+    if (bridgeOps.length > 0) {
+      const block = await ALICE.provider?.getBlock(receipt.blockNumber);
+      const dataSig = await aliceWallet.signedMessages2(0);
+      const proof = defaultAbiCoder.encode(
+        ["uint256", "uint256", "bytes32"],
+        [receipt.blockNumber, block?.timestamp, keccak256(dataSig)],
+      );
+      const execMeta2 = await aliceWallet
+        .connect(OWNER)
+        .populateTransaction.execBridge(
+          signedDataValues.values,
+          signedDataValues.s2,
+          proof,
+        );
+      const relayerTx2 = await OWNER.sendTransaction(execMeta2);
+    }
+    // // Retrieve the timestamp from the block information
+    // const timestamp = block.timestamp;
+    // console.log(
+    //   await aliceWallet
+    //     .connect(OWNER)
+    //     .recoverContractSignature(receipt.blockNumber, timestamp),
+    //   "ooo",
+    // );
+    // const signedDataBridgeValues = await sign(
+    //   userOps,
+    //   bridgeOps,
+    //   allowanceOps,
+    //   0,
+    //   OWNER,
+
+    //   31337,
+    //   31337,
+    //   31337,
+    //   aliceWallet.address,
+    //   TxType.SourceChainOp,
+    // );
+
+    console.log(receipt);
 
     console.log(formatEther(await busd.balanceOf(ALICE.address)));
     console.log(formatEther(await cake.balanceOf(ALICE.address)));
@@ -279,5 +367,43 @@ describe("Permit2 Signature Transfer", () => {
     console.log(formatEther(await busd.balanceOf(aliceWallet.address)));
     console.log(formatEther(await cake.balanceOf(OWNER.address)));
     console.log(formatEther(await busd.balanceOf(OWNER.address)));
+
+    // console.log(sigs);
+    const sessionPrivateKey = ethers.utils.randomBytes(32);
+    // localStorage.setItem('sessionPrivateKey', ethers.utils.hexlify(sessionPrivateKey))
+    // const sessionWallet = new ethers.Wallet(sessionPrivateKey);
+    // const sessionAddress = await sessionWallet.getAddress();
+    // console.log(sessionAddress);
+    // console.log(await wallet.priv());
+    // const scwallet = new ethers.Wallet(await wallet.priv());
+    // const scadd = await scwallet.getAddress();
+    // console.log(scadd, aliceWallet.address);
+    // const d = await scwallet.signMessage("hello");
+    // console.log(d);
+    // console.log(await ethers.utils.verifyMessage("hello", d));
+
+    // let message = ethers.utils.hexlify(ethers.utils.randomBytes(250));
+    // let hash = ethers.utils.keccak256(ethers.utils.randomBytes(32));
+
+    // // let wallet_b = SequenceWallet.basicWallet(context, {
+    //   address: wallet.address,
+    //   signing: 2,
+    //   idle: 1,
+    // });
+    // // console.log(await aliceWallet.priv());
+    // const signature = await signMessage(message);
+    // [
+    //   0x04a8db6a3a6ebb48f2bf573599ac12bda1ffc5c1f5fe1a5179719f0eb6d20e05,
+    //   0x2ebb9c64ef99bbd299c7e1595c459f3301a1c28d50226d4c6882d584e71f6464,
+    // ];
+    const publicKey = ethers.utils.computePublicKey(
+      "0x2ebb9c64ef99bbd299c7e1595c459f3301a1c28d50226d4c6882d584e71f6464",
+      true,
+    );
+    // const p =
+    // Split the public key into its components (x, y)
+    // const publicKeyComponents = ethers.utils.splitSignature(publicKey);
+
+    console.log(publicKey);
   });
 });

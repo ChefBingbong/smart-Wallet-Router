@@ -16,7 +16,7 @@ export const sign = async (
   const domain = {
     name: "ECDSAWallet",
     version: "0.0.1",
-    chainId: chainId,
+    chainId: await account.getChainId(),
     verifyingContract,
   };
 
@@ -57,13 +57,14 @@ export const sign = async (
     nonce,
     chainID: chainId,
     bridgeChainID: bridgeChainID,
-    sigChainID: sigChainId,
+    sigChainID: await account.getChainId(),
   };
 
+  console.log(await account.getChainId());
   const signature = await account._signTypedData(domain, types, values);
   const sig = defaultAbiCoder.encode(
     ["uint256", "bytes"],
-    [sigChainId, signature],
+    [await account.getChainId(), signature],
   );
 
   return { signature: sig, values };

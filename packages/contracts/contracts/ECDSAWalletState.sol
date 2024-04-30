@@ -57,7 +57,12 @@ abstract contract ECDSAWalletState is SmartWallet {
   }
 
   mapping(uint256 => ECDSAExecValidationDetails) public validationResultsMap;
+  mapping(uint256 => bytes) public bridgeOpsDataMap;
   mapping(uint256 => bytes) public bridgeVerifierProof;
+  mapping(uint256 => uint256) public bts;
+  mapping(bytes32 => bytes) public signedMessages;
+  mapping(uint256 => bytes) public signedMessages2;
+
   mapping(address => mapping(address => mapping(address => PackedAllowance))) public allowance;
 
   modifier onlyWalletSigners() {
