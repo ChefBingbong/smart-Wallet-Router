@@ -39,9 +39,9 @@ import { sleep } from "./deploySmartWallet";
 import { getViemClient } from "./utils/client";
 
 async function main(config: ScriptConfig) {
-  const chainId = Number(await hre.getChainId()) as ChainId;
+  const chainId = 97;
   const bridgeChainId = 97;
-  const sigChainId = 97;
+  const sigChainId = 421614;
 
   const { getNamedAccounts, deployments, network } = hre;
   const { get } = deployments;
@@ -51,13 +51,29 @@ async function main(config: ScriptConfig) {
     hre.config.networks[hre.network.name] as HttpNetworkConfig,
   );
 
+  const providerSigChain = new JsonRpcProvider(
+    hre.config.networks["arbitrumSepoilla"] as HttpNetworkConfig,
+  );
+
   const signers = hre.network.config.accounts as string[];
 
-  console.log(chalk.yellow("Setting up Contracts and Network Config", user));
+  console.log(
+    chalk.yellow(
+      "Setting up Contracts and Network Config",
+      user,
+      hre.network.name,
+    ),
+  );
   await sleep(1500);
 
-  const userWalletSigner = new hre.ethers.Wallet(signers[1], provider);
-  const smartWalletSigner = new hre.ethers.Wallet(signers[0], provider);
+  const userWalletSignerSigChain = new hre.ethers.Wallet(
+    signers[2],
+    providerSigChain,
+  );
+  // console.log(userWalletSignerSigChain, userWalletSigner);
+  const userWalletSigner = new hre.ethers.Wallet(signers[2], provider);
+  const smartWalletSigner = new hre.ethers.Wallet(signers[1], provider);
+  console.log(userWalletSignerSigChain, userWalletSigner);
 
   const factory = await get("ECDSAWalletFactory");
   const smartWalletFactory = ECDSAWalletFactory__factory.connect(
@@ -72,6 +88,8 @@ async function main(config: ScriptConfig) {
     userSmartWalletAddress,
     provider,
   );
+
+  console.log(userSmartWalletAddress);
 
   const userWalletContractCode = await provider.getCode(userSmartWalletAddress);
   if (userWalletContractCode === "0x") {
@@ -182,7 +200,10 @@ async function main(config: ScriptConfig) {
         token: feeAsset.address,
         amount: MaxAllowanceTransferAmount,
         expiration: BigInt(toDeadline(PERMIT_EXPIRATION)),
-        nonce: BigInt(allowance2.nonce), // only increment if both permits are same asset
+        nonce:
+          feeAsset.address === baseAsset.address
+            ? BigInt(allowance2.nonce + 1)
+            : BigInt(allowance2.nonce), // only increment if both permits are same asset
       },
     ],
     spender: permit2Address,
@@ -304,9 +325,9 @@ async function main(config: ScriptConfig) {
     bridgeOps,
     permitDetails,
     currentWalletTxNonce.toBigInt(),
-    userWalletSigner,
-    Number(sigChainId),
-    Number(chainId),
+    userWalletSignerSigChain,
+    await userWalletSigner.getChainId(),
+    await userWalletSigner.getChainId(),
     Number(bridgeChainId),
     userSmartWalletAddress,
   );
@@ -385,7 +406,7 @@ function parseContractError<T>(err: T): string {
 main({
   baseAsset: "CAKE",
   quoteAsset: "BUSD",
-  feeAsset: "BUSD",
+  feeAsset: "CAKE",
   amountIn: BigInt(1 * 10 ** 18),
 }).catch((error) => {
   console.error(error);

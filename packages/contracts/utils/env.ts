@@ -48,7 +48,7 @@ export function getAccountsType(network: string): ACCOUNTS_TYPE {
   return "MNEMONIC";
 }
 
-export function getAccounts(network: string): { mnemonic: string } | string[] {
+export function getAccounts(network: string): string[] {
   if (getAccountsType(network) == "PRIVATE_KEYS") {
     return getPrivateKeys(network);
   }
