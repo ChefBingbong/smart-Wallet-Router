@@ -13,4 +13,4 @@ Instead you execute the trade from you main EOA account and a transaction gets a
 ### Ecexute trades with custom gas token from any chain
 This is possible by enbaling and implementing Signature based witness transfers with the witness being the smart wallet relaler private key. Combining all this together,  users can make trades where they dont pay gas in native currency, but rather they pay the gass fee in the equivilent amount of the base token in their trade and this fee gets sent to the smart wallet relayer, who in turns executes the trade on behalf of the user.
 
-The smart wallet SDK also makes it possibles for users to pay transaction fees with currencies on other chains. in this scenario signtaures will be required, which maybe can be apprved, but.
+The smart wallet SDK also makes it possibles for users to pay transaction fees with currencies on other chains. in this scenario signtaures will be required, which maybe can be apprved
