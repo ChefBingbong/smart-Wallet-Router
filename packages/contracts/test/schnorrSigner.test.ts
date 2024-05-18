@@ -60,6 +60,7 @@ import {
   buildSignature,
   buildSignatureBytes,
 } from "./utils/buildSignatures";
+import { Schnorr2 } from "../typechain-types/contracts/Deployer.sol";
 
 describe.skip("Schnorr signer", () => {
   // const PERMIT2_ADDRESS = getPermit2Address(97);

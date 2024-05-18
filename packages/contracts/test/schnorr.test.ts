@@ -81,7 +81,6 @@ describe("Permit2 Signature Transfer", () => {
   let aliceWallet: ECDSAWallet;
   let wallet: SmartWalletFactory;
   let schnorr: Schnorr2;
-  let schnorro: SchnorrOrg;
 
   let weth: ABC;
   let cake: XYZ;
@@ -96,13 +95,6 @@ describe("Permit2 Signature Transfer", () => {
 
     schnorr = await Schnorr.connect(OWNER).deploy();
     await schnorr.deployed();
-
-    const SchnorroRG = (await ethers.getContractFactory(
-      "SchnorrOrg",
-    )) as SchnorrOrg__factory;
-
-    schnorro = await SchnorroRG.connect(OWNER).deploy();
-    await schnorro.deployed();
   });
 
   // ----- UPDATE PARNER -----
@@ -112,11 +104,11 @@ describe("Permit2 Signature Transfer", () => {
     //       "0x72c7e4eb0ed61f5c6779eaa13def00033c3ec158368c722b1e3adfc792b006a7",
     //     );
     const pointPub = scep.Point.fromPrivateKey(
-      "792eca682b890b31356247f2b04662bff448b6bb19ea1c8ab48da222c894ef9b",
+      "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
     );
 
     const schnorPrivate = await schnorr.PrivDerive(
-      "0x792eca682b890b31356247f2b04662bff448b6bb19ea1c8ab48da222c894ef9b",
+      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
       keccak256(hexToBytes("0x12")),
     );
     console.log(pointPub);
@@ -133,7 +125,7 @@ describe("Permit2 Signature Transfer", () => {
     const derivedAddress = await schnorr.deriveAddress(schnorrPulic);
     const sig = await schnorr.sign(
       "0x" + Buffer.alloc(32, 0x35).toString("hex"),
-      "0x792eca682b890b31356247f2b04662bff448b6bb19ea1c8ab48da222c894ef9b",
+      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
     );
     const recovery = await schnorr.recover(
       "0x" + Buffer.alloc(32, 0x35).toString("hex"),
