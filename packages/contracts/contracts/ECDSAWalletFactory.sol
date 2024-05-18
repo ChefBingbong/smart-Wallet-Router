@@ -11,6 +11,9 @@ contract ECDSAWalletFactory {
   SmartWalletFactory public factory;
   ECDSAWallet public wallet;
 
+  mapping(bytes32 => address) public walletFromPubKeyHash;
+  mapping(address => bytes32) public pubKeyHashFromWallet;
+
   constructor(SmartWalletFactory _factory) {
     wallet = new ECDSAWallet();
     wallet.__ECDSAWallet_init(address(0));
@@ -19,26 +22,28 @@ contract ECDSAWalletFactory {
     factory.setEcdsaFactory(address(this));
   }
 
-  function createWallet(address _owner) external payable returns (IWallet) {
-    return factory.createWallet{value: msg.value}(address(wallet), abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner));
+  function createWallet(uint256[2] memory pubkey, address _owner) external payable returns (IWallet) {
+    bytes32 pubKeyHash = keccak256(abi.encodePacked(pubkey));
+    IWallet _wallet = factory.createWallet{value: msg.value}(
+      address(wallet),
+      pubkey,
+      abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner)
+    );
+
+    walletFromPubKeyHash[pubKeyHash] = address(_wallet);
+    pubKeyHashFromWallet[address(_wallet)] = pubKeyHash;
+
+    return _wallet;
   }
 
-  function walletAddress(address _owner, uint256 _nonce) public view returns (address) {
-    return factory.walletAddress(address(wallet), abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner), _nonce);
+  function walletAddress(uint256[2] memory pubkey, address _owner, uint256 _nonce) public view returns (address) {
+    console.log(msg.sender);
+    return factory.walletAddress(address(wallet), pubkey, abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner), _nonce);
   }
 
   function generateContractSignature(address _owner, bytes32 _data) external view returns (bytes32) {
     bytes32 timestamp = keccak256(abi.encodePacked(_data, msg.sender, block.number, block.timestamp));
-    return
-      keccak256(
-        abi.encodePacked(
-          factory.walletAddress(
-            address(wallet),
-            abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner),
-            uint256(timestamp)
-          )
-        )
-      );
+    return keccak256(abi.encodePacked(timestamp));
   }
 
   function recoverContractSignature(
@@ -48,15 +53,6 @@ contract ECDSAWalletFactory {
     bytes32 _dataHash
   ) public view returns (bytes32) {
     bytes32 timestamp = keccak256(abi.encodePacked(_dataHash, msg.sender, _blockNumber, _blockTimestamp));
-    return
-      keccak256(
-        abi.encodePacked(
-          factory.walletAddress(
-            address(wallet),
-            abi.encodeWithSelector(ECDSAWalletState.__ECDSAWallet_init.selector, _owner),
-            uint256(timestamp)
-          )
-        )
-      );
+    return keccak256(abi.encodePacked(timestamp));
   }
 }

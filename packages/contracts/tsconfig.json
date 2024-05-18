@@ -1,16 +1,17 @@
 {
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"target": "es2020",
+		"target": "ES2022",
 		"module": "CommonJS",
 		"strict": true,
 		"esModuleInterop": true,
 		"moduleResolution": "node",
 		"forceConsistentCasingInFileNames": true,
 		"outDir": "dist",
-		"composite": true
+		"composite": true,
+		"lib": ["ES2022"]
 	},
-	"include": ["./src", "./utils", "typechain/**/*"],
+	"include": ["./src", "./utils", "typechain/**/*", "scripts/t.ts"],
 	"files": [
 		// "./hardhat.config.ts",
 		"./utils/env.ts",
