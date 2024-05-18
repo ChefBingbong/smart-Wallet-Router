@@ -287,6 +287,45 @@ library Secp256k1 {
     return q;
   }
 
+  function modSqrt(uint256 a, uint256 p) internal pure returns (uint256) {
+    if (a == 0) return 0;
+    if (expMod(a, (p - 1) / 2, p) != 1) return 0;
+
+    uint256 s = p - 1;
+    uint256 e = 0;
+    while (s % 2 == 0) {
+      s /= 2;
+      e++;
+    }
+
+    uint256 n = 2;
+    while (expMod(n, (p - 1) / 2, p) != p - 1) {
+      n++;
+    }
+
+    uint256 x = expMod(a, (s + 1) / 2, p);
+    uint256 b = expMod(a, s, p);
+    uint256 g = expMod(n, s, p);
+    uint256 r = e;
+
+    while (true) {
+      uint256 t = b;
+      uint256 m = 0;
+      for (m = 0; m < r; m++) {
+        if (t == 1) break;
+        t = expMod(t, 2, p);
+      }
+
+      if (m == 0) return x;
+
+      uint256 gs = expMod(g, 2 ** (r - m - 1), p);
+      g = mulmod(gs, gs, p);
+      x = mulmod(x, gs, p);
+      b = mulmod(b, g, p);
+      r = m;
+    }
+  }
+
   function expMod(uint256 _base, uint256 _exp, uint256 _pp) internal pure returns (uint256) {
     require(_pp != 0, "EllipticCurve: modulus is zero");
 
@@ -310,6 +349,44 @@ library Secp256k1 {
     }
 
     return r;
+  }
+
+  function point_hash(uint256[2] memory point) public pure returns (address) {
+    return address(uint160(uint256(keccak256(abi.encodePacked(point[0], point[1])))) & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+  }
+
+  function hashToPoint(bytes32 hash) public pure returns (uint256 x, uint256 y) {
+    uint256 x_candidate = uint256(hash) % p;
+
+    while (true) {
+      uint256 y_squared = addmod(mulmod(x_candidate, mulmod(x_candidate, x_candidate, p), p), b, p);
+      y = modSqrt(y_squared, p);
+
+      if (y != 0) {
+        x = x_candidate;
+        break;
+      }
+
+      x_candidate = addmod(x_candidate, 1, p);
+    }
+  }
+
+  function isPubKey(uint[2] memory p) internal pure returns (bool isPK) {
+    isPK = isOnCurve(p[0], p[1], A, B, PP);
+  }
+
+  function compress(uint[2] memory p) internal pure returns (uint8 yBit, uint x) {
+    x = p[0];
+    yBit = p[1] & 1 == 1 ? 1 : 0;
+  }
+
+  function decompress(uint8 yBit, uint256 x) internal pure returns (uint256[2] memory point) {
+    uint256 p = PP;
+    uint256 y2 = addmod(mulmod(x, mulmod(x, x, p), p), 7, p);
+    uint256 y_ = expMod(y2, (p + 1) / 4, PP);
+    uint256 cmp = yBit ^ (y_ & 1);
+    point[0] = x;
+    point[1] = (cmp == 0) ? y_ : p - y_;
   }
 }
 
