@@ -103,12 +103,13 @@ describe("Permit2 Signature Transfer", () => {
     //       "0x635b1ce8ddf5d21b60e346c7dbe26552c518d6ea48062b5585e53aeac5ee4461",
     //       "0x72c7e4eb0ed61f5c6779eaa13def00033c3ec158368c722b1e3adfc792b006a7",
     //     );
-    const pointPub = scep.Point.fromPrivateKey(
-      "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
-    );
+    const pointPub =
+      scep.Point.fromPrivateKey(
+        58061806736494292520208361787951596349232252952004834268315298885074801295881n,
+      );
 
     const schnorPrivate = await schnorr.PrivDerive(
-      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
+      58061806736494292520208361787951596349232252952004834268315298885074801295881n,
       keccak256(hexToBytes("0x12")),
     );
     console.log(pointPub);
@@ -123,9 +124,13 @@ describe("Permit2 Signature Transfer", () => {
     );
     // console.log(schnorPrivate);
     const derivedAddress = await schnorr.deriveAddress(schnorrPulic);
+    console.log(derivedAddress);
     const sig = await schnorr.sign(
       "0x" + Buffer.alloc(32, 0x35).toString("hex"),
-      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690e",
+      "0x" +
+        58061806736494292520208361787951596349232252952004834268315298885074801295881n.toString(
+          16,
+        ),
     );
     const recovery = await schnorr.recover(
       "0x" + Buffer.alloc(32, 0x35).toString("hex"),
